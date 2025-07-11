@@ -62,7 +62,7 @@
   position:absolute;
   top:0px;
   left:-4px;
-  background:rgba(0,0,0,0.8);
+  background:rgba(0,0,0,0.65);
   color:#fff;
   min-width:120px;
   display:none;
@@ -157,11 +157,11 @@
   background: url("../imgs/dock/dock_sprite.png") 0 -42px no-repeat;
 }
 
-#dock_Browser {
+.dock_Browser, #dock_Browser {
   background: url("../imgs/dock/dock_sprite.png") 0 -126px no-repeat;
 }
 
-#dock_Finder {
+.dock_Finder, #dock_Finder {
   background: url("../imgs/dock/dock_sprite.png") 0 -168px no-repeat;
 }
 

@@ -12,35 +12,43 @@ WebX.Browser.prototype.create = function (site_url) {
   var browser_top = $('<div/>', {
     className: "wxBrowser_top"
   }).appendTo(browser);
+
   var browser_top_perms = $('<div/>', {
     className: "wxBrowser_top_permanents"
   }).appendTo(browser_top);
+
   var browser_title = $('<div/>', {
     className: "wxBrowser_title",
     text: "Browse"
   }).appendTo(browser_top_perms);
+
   var browser_top_button_box = $('<div/>', {
     className: "wxBrowser_buttons"
   }).appendTo(browser_top_perms);
+
   $('<div/>', {
     className: "button close"
   }).appendTo(browser_top_button_box).bind('click', function(){
-    debug.log('close button clicked');
-    WebX.browser.toggle(browser);
+    //debug.log('close button clicked');
+    console.log("browser close button clicked :" + browser.attr('id'));
+    WebX.Browser.toggle(browser);
   });
+
   $('<div/>', {
     className: "button minimize"
   }).appendTo(browser_top_button_box).bind('click', function(){
     debug.log('minimize button clicked');
     browser.hide("puff", {percent: 1}, 840);
-    WebX.Dock.create_minimized(browser_title.html(),browser.attr('id'));
+    WebX.Dock.create_minimized_icon(browser.attr('id'),browser.attr('id'), 'Browser');
   });
+
   $('<div/>', {
     className: "button maximize"
   }).appendTo(browser_top_button_box).bind('click', function(){
     debug.log('maximize button clicked');
-    WebX.browser.maximize(browser);
+    WebX.Browser.maximize(browser);
   });
+
   var browser_nav = $('<div/>', {
     className: "wxBrowser_nav"
   }).appendTo(browser_top);
@@ -130,7 +138,7 @@ WebX.Browser.prototype.create = function (site_url) {
 		} else {
 			if(wxIframe_source.match(' ')) {
 				loader_div.show();
-				browser_iframe.attr({'src': 'http://www.google.com/search?hl=en&q='+ wxIframe_source.replace(' ','+') +'&btnI=I%27m+Feeling+Lucky'}).bind('load', function(){ loader_div.hide(); });
+				browser_iframe.attr({'src': 'https://www.google.com/search?hl=en&q='+ wxIframe_source.replace(' ','+') +'&btnI=I%27m+Feeling+Lucky'}).bind('load', function(){ loader_div.hide(); });
 				browser_input.attr({'value': browser_iframe.attr('src')});
 			} else {
 				var history = browser_iframe.data('history');
@@ -232,8 +240,8 @@ WebX.Browser.prototype.open = function (ele, opt) {
 
 WebX.Browser.prototype.toggle = function (ele) {
   if ($(ele).is(':visible')) {
-    WebX.browser.close(ele);
+    WebX.Browser.close(ele);
   } else if (!$(ele).is(':visible')) {
-    WebX.browser.open(ele);
+    WebX.Browser.open(ele);
   }
 };

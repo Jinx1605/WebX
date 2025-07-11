@@ -1,140 +1,117 @@
 var WebX = {
   init: function () {
-    this.create = new WebX.Create();
-    this.window = new WebX.Window();
-    this.browser = new WebX.Browser();
-    this.finder = new WebX.Finder();
+    //this.window = new WebX.Window();
+    this.Browser = new WebX.Browser();
+    this.Finder = new WebX.Finder();
+    this.Dock = new WebX.Dock();
     
-    var webx_wrapper = $('<div/>', {
-      id: "webxWrapper"
-    }).appendTo(document.getElementsByTagName('body')[0]);
-    $('<div/>', {
-      innerHTML: '<img id="wallpaper" src="assets/imgs/wallpaper/The_Great_Wave.jpg" alt="" title="" />'
-    }).appendTo(webx_wrapper);
-    $('#starter').hide();
+    var webx_wrapper = document.createElement('div');
+    webx_wrapper.id = 'webxWrapper';
+    document.body.appendChild(webx_wrapper);
+
+    var wallpaperDiv = document.createElement('div');
+    wallpaperDiv.innerHTML = '<img id="wallpaper" src="https://unsplash.it/1280/720/?random" alt="" title="" />';
+    webx_wrapper.appendChild(wallpaperDiv);
+
+    var starter = document.getElementById('starter');
+    if (starter) starter.style.display = 'none';
+
     WebX.Menubar.init();
     WebX.Dock.init();
     WebX.Dashboard.init();
     
     //windowResize();
   },
-  Clock: {
-    create: function (ele_id, target) {
-      $('<div>', {
-        id: ele_id
-      }).appendTo(target);
-      WebX.Clock.update('#' + ele_id);
-    },
-    update: function (ele_id) {
-      var now = new Date();
-      now.hours = now.getHours();
-      now.mins = now.getMinutes();
-      now.secn = now.getSeconds();
-      now.day = now.getDay();
-      now.theDay = now.getDate();
-      now.month = now.getMonth();
-      now.year = now.getFullYear();
-      var dayList = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-      var monthList = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-      if (now.hours >= 12) {
-        now.AorP = "PM";
-      } else {
-        now.AorP = "AM";
-      }
-      if (now.hours >= 13) {
-        now.hours -= 12;
-      }
-      if (now.hours === 0) {
-        now.hours = 12;
-      }
-      if (now.secn < 10) {
-        now.secn = "0" + now.secn;
-      }
-      if (now.mins < 10) {
-        now.mins = "0" + now.mins;
-      }
-      $(ele_id).html(dayList[now.day] + ",&nbsp;" + monthList[now.month] + "&nbsp;" + now.theDay + ",&nbsp;" + now.year + "&nbsp;&nbsp;|&nbsp;&nbsp;" + now.hours + ":" + now.mins + "&nbsp;" + now.AorP);
-      setTimeout(function () {
-        WebX.Clock.update(ele_id);
-      }, 1000);
-    }
-  },
   Menubar: {
     init: function () {
-      var menubar = $('<div>', {
-        id: "wxMenubar"
-      }).appendTo('#webxWrapper');
+      var webx_wrapper = document.getElementById('webxWrapper'),
+      menubar = document.createElement('div'),
+      user_area = document.createElement('div'),
+      userNameDiv = document.createElement('div'),
+      userPicDiv = document.createElement('div');
 
-      var user_area = $('<div>', {
-        id: 'mb_user_area'
-      }).appendTo(menubar);
+      menubar.id = "wxMenubar";
+      user_area.id = 'mb_user_area';
+      userNameDiv.id = 'wx_mb_user_name';
+      userPicDiv.id = 'wx_mb_user_pic';
+
+      webx_wrapper.appendChild(menubar);
+      menubar.appendChild(user_area);
 
       WebX.Clock.create('wx_mb_clock', user_area);
 
-      $('<div>', {
-        id: 'wx_mb_user_name',
-        text: 'Default User'
-      }).prependTo(user_area);
-
-      $('<div>', {
-        id: 'wx_mb_user_pic'
-      }).prependTo(user_area);
+      userNameDiv.textContent = 'Default User';
+      user_area.insertBefore(userNameDiv, user_area.firstChild);
+      
+      user_area.insertBefore(userPicDiv, user_area.firstChild);
 
       // for (var item in webx_data.menubar) {
       //   WebX.menubar.create_link(webx_data.menubar.items[this_item], menubar_ul);
       // }
 
       for (var item in webx_data.menubar) {
-        var menubar_ul = $('<ul>', {
-          className: "menubar_ul",
-          id: "menubar_ul_" + item
-        }).appendTo(menubar);
+        var menubar_ul = document.createElement('ul');
+        menubar_ul.className = "menubar_ul";
+        menubar_ul.id = "menubar_ul_" + item;
+        menubar.appendChild(menubar_ul);
         for (var link in webx_data.menubar[item]) {
           WebX.Menubar.create_link(item+"_"+link, menubar_ul);
         }
         // 
       }
       // make finder menubar show
-      $(menubar).find('ul.menubar_ul').not('#menubar_ul_finder').each(function(){
-        $(this).hide();
+      var menubarUls = menubar.querySelectorAll('ul.menubar_ul');
+      menubarUls.forEach(function(ul) {
+        if (ul.id !== 'menubar_ul_finder') {
+          ul.style.display = 'none';
+        }
       });
     },
     create_link: function (obj, target) {
       var names = obj.split("_");
-      var menubar_li = $('<li>', {
-        className: "mb_item disabled",
-        id: 'mb_' + obj,
-        text: names[1],
-        click: function(e) {
-          e.preventDefault();
-          $(this).toggleClass('disabled').toggleClass('enabled');
-          $(target).find('li.enabled').not(this).each(function(){
-            $(this).toggleClass('enabled').toggleClass('disabled');
-          });
-          return false;
-        },
-        mouseover: function(e) {
-          if($(target).find('li.enabled').not(this).length === 1) {
-            $(target).find('li.enabled').not(this).each(function(){
-              $(this).toggleClass('enabled').toggleClass('disabled');
-            });
-            $(this).toggleClass('enabled').toggleClass('disabled');
+      var menubar_li = document.createElement('li');
+      menubar_li.className = "mb_item disabled";
+      menubar_li.id = 'mb_' + obj;
+      menubar_li.textContent = names[1];
+      menubar_li.addEventListener('click', function(e) {
+        e.preventDefault();
+        this.classList.toggle('disabled');
+        this.classList.toggle('enabled');
+        var enabledItems = target.querySelectorAll('li.enabled');
+        enabledItems.forEach(function(item) {
+          if (item !== menubar_li) {
+            item.classList.toggle('enabled');
+            item.classList.toggle('disabled');
           }
-          return false;
+        });
+        return false;
+      });
+      menubar_li.addEventListener('mouseover', function(e) {
+        var enabledItems = target.querySelectorAll('li.enabled');
+        if (enabledItems.length === 1 && !this.classList.contains('enabled')) {
+          enabledItems.forEach(function(item) {
+            item.classList.toggle('enabled');
+            item.classList.toggle('disabled');
+          });
+          this.classList.toggle('enabled');
+          this.classList.toggle('disabled');
         }
-      }).appendTo(target);
-      WebX.Menubar.create_panel(obj,webx_data.menubar[names[0]][names[1]],menubar_li);
+        return false;
+      });
+      target.appendChild(menubar_li);     
+      WebX.Menubar.create_panel(obj, webx_data.menubar[names[0]][names[1]], menubar_li); 
+      
     },
     create_panel: function (panel, contents, target) {
       // debug.log(panel+" panel: "+webx_data.menubar.panels[panel]+" - left: "+webx_data.menubar.panels[panel].styles.left);
       var panel_name = panel + '_panel';
+      var mb_panel = document.createElement('div');
+      mb_panel.id = panel_name;
+      mb_panel.className = "mbWindow";
+      target.appendChild(mb_panel); 
 
-      var mb_panel = $('<div>', {
-        id: panel_name,
-        className: "mbWindow"
-      }).appendTo(target);
-
-      var mb_link_ul = $('<ul>').appendTo(mb_panel);
+      var mb_link_ul = document.createElement('ul');
+      mb_panel.appendChild(mb_link_ul);
 
       for (var panel_link in contents) {
         WebX.Menubar.create_panel_link(panel_link, contents[panel_link], mb_link_ul);
@@ -143,31 +120,35 @@ var WebX = {
     create_sub_panel: function (panel, contents, target) {
       // debug.log(panel+" panel: "+webx_data.menubar.panels[panel]+" - left: "+webx_data.menubar.panels[panel].styles.left);
       var panel_name = panel + '_sub_panel';
-
-      var mb_panel = $('<div>', {
-        id: panel_name,
-        className: "mbSubWindow"
-      }).appendTo(target);
-
-      var mb_link_ul = $('<ul>').appendTo(mb_panel);
+      var mb_panel = document.createElement('div');
+      mb_panel.id = panel_name;
+      mb_panel.className = "mbSubWindow";
+      target.appendChild(mb_panel); 
+      // Create the sub-panel links
+      var mb_link_ul = document.createElement('ul');
+      mb_panel.appendChild(mb_link_ul);
 
       for (var panel_link in contents) {
         WebX.Menubar.create_panel_link(panel_link, contents[panel_link], mb_link_ul);
       }
     },
     create_panel_link: function (link_name, link_funcs, target) {
-      var mb_link_li = $('<li>', {
-        text: link_name
-      }).appendTo(target);
+      var mb_link_li = document.createElement('li');
+      mb_link_li.textContent = link_name;
+      target.appendChild(mb_link_li); 
 
       if(link_funcs.click !== 'false') {
-        var func = eval( "(" + link_funcs.click + ")" );
-        mb_link_li.bind('click', function(){
+        //console.log("Creating link: " + link_name + " with click function: " + link_funcs.click);
+        //var func = eval( "(" + link_funcs.click + ")" );
+        var func = new Function('return ' + link_funcs.click)();
+        mb_link_li.addEventListener('click', function(e) {
+          e.preventDefault();
           func();
           return false;
         });
       } else {
-        mb_link_li.bind('click', function(){
+        mb_link_li.addEventListener('click', function(e) {
+          e.preventDefault();
           return false;
         });
       }
@@ -180,235 +161,9 @@ var WebX = {
       $('#menubar_ul_'+menubar).show();
     }
   },
-  Dock: {
-    init: function () {
-      var theDock = $('<div/>', {
-        id: "wxDock"
-      }).appendTo('#webxWrapper');
-      var theDock_wrapper = $('<div/>', {
-        id: "wxDock_wrapper"
-      }).appendTo(theDock);
-
-      $('<div/>', {
-        id: "wxDock_left"
-      }).appendTo(theDock_wrapper);
-      var dock_content = $('<ul/>', {
-        id: "wxDock_ul"
-      }).appendTo(theDock_wrapper);
-      $('<div/>', {
-        id: "wxDock_right"
-      }).appendTo(theDock_wrapper);
-
-      for (var item in webx_data.dock) {
-        if(item !== "separator") {
-          WebX.Dock.create_icon(webx_data.dock[item]);
-        } else {
-          WebX.Dock.create_separator();
-        }
-      }
-
-      // make sortable
-      $(dock_content).sortable({
-        opacity: 0.80,
-        helper: 'clone',
-        revert: true,
-        tolerance: 'pointer',
-        cancel: '.wxDock_no_sort',
-        start: function (event, ui) {
-          $(ui.helper[0]).find('.wxTip').hide();
-        }
-      }).disableSelection();
-    },
-    create_icon: function (item,insert) {
-      var dock_item = $('<li>', {
-        className: 'wxDock_item',
-        id: 'wxDock_item_' + item.name.replace(' ', '_')
-      });
-      
-      if(item.name === "Trash") {
-        dock_item.addClass('wxDock_no_sort');
-        dock_item.droppable({
-          accept: ".wx_window",
-        	drop: function( event, ui ) {
-            $('#dock_Trash').addClass('full');
-          }
-        });
-      }
-
-      var icon_div = $('<div/>', {
-        className: 'iIcon dockIcon',
-        id: 'dock_' + item.name
-      }).appendTo(dock_item);
-      
-      if(insert) {
-        dock_item.attr({ "id": item.id });
-        icon_div.attr({ "id": "dock_" + item.name.replace(/ /g,"_").replace(/'/g,"").replace(/’/g,"").replace(/-/g,"").replace(/\,/g,"").replace(/\./g,"")})
-        $('#wxDock_item_Trash').before(dock_item);
-      } else {
-        dock_item.appendTo('#wxDock_ul');
-      }
-
-      $('<div/>', {
-        className: "iGloss"
-      }).appendTo(icon_div);
-
-      WebX.Dock.create_icon_tip(dock_item, item.name);
-      WebX.Dock.create_icon_context_menu(dock_item, item.right_click_menu);
-      
-      if(item.click !== 'false') {
-        var func = eval( "(" + item.click + ")" );
-        var right_func = eval( "(" + item.right_click + ")" );
-        icon_div.bind('click', function(e){
-          if(dock_item.hasClass('right_clicked')) {
-            dock_item.removeClass('right_clicked');
-            $('li.wxDock_item').removeClass('no_hover');
-          } else {
-            func(); 
-          }
-          return false;
-        });
-        dock_item.rightClick(function(e){
-          if(dock_item.hasClass('right_clicked')) {
-            dock_item.removeClass('right_clicked');
-            $('li.wxDock_item').removeClass('no_hover');
-          } else {
-            right_func();
-            dock_item.addClass('right_clicked');
-            $('li.wxDock_item').not(dock_item).addClass('no_hover');
-          }
-  				return false;
-  			});
-      } else {
-        var right_func = eval( "(" + item.right_click + ")" );
-        icon_div.bind('click', function(){
-          if(dock_item.hasClass('right_clicked')) {
-            dock_item.removeClass('right_clicked');
-            $('li.wxDock_item').removeClass('no_hover');
-          }
-          return false;
-        });
-        dock_item.rightClick(function(e){
-          if(dock_item.hasClass('right_clicked')) {
-            dock_item.removeClass('right_clicked');
-            $('li.wxDock_item').removeClass('no_hover');
-          } else {
-            right_func();
-            dock_item.addClass('right_clicked');
-            $('li.wxDock_item').not(dock_item).addClass('no_hover');
-          }
-  				return false;
-  			});
-      }
-
-      WebX.Dock.center();
-    },
-    create_icon_tip: function (icon, text) {
-      var tip_id = 'wxDock_tip_' + text.replace(/ /g,"_").replace(/'/g,"").replace(/’/g,"").replace(/-/g,"").replace(/\,/g,"").replace(/\./g,"");
-      var theTip = $('<div/>', {
-        className: "wxTip",
-        id: tip_id
-      });
-      $('<div/>', {
-        className: "wxTipText",
-        innerHTML: text.replace(/ /g,"&nbsp;")
-      }).appendTo(theTip);
-
-      $(icon).append(theTip);
-
-      var tipPos = $("div#" + tip_id).width() / 2;
-
-      $("div#" + tip_id).css({
-        "margin-left": '-' + tipPos + "px"
-      });
-    },
-    create_minimized: function (name,item) {
-      debug.log('creating minimized icon');
-      debug.log('name : ' + name);
-      debug.log('item : ' + item);
-      var item_name = String(name);
-      var item_id = 'wxDock_item_' + String(item);
-      var minimized_data = {
-		    "name": item_name,
-		    "id": item_id,
-		    "click": "function(){ $('#"+item+"').show('puff', {percent: 100}, 840); $('#"+item_id+"').remove(); WebX.Dock.center(); }",
-		    "right_click": "function(){ debug.log(\"Minimized item right click\");}",
-		    "right_click_menu": [{
-  		      "item": "Open " + item_name,
-  		      "click": "function(){ $('#"+item+"').show('puff', {percent: 100}, 840); $('#"+item_id+"').remove(); WebX.Dock.center(); }"
-  		    }
-		    ]
-  		}
-  		WebX.Dock.create_icon(minimized_data,true);
-    },
-    create_separator: function () {
-      var dock_item = $('<li>', {
-        className: 'wxDock_separator wxDock_no_sort'
-      }).appendTo('#wxDock_ul');
-
-      var separator_div = $('<div/>', {
-        className: 'dock_separator'
-      }).appendTo(dock_item);
-
-      WebX.Dock.center();
-    },
-    create_icon_context_menu: function (icon, items) {
-      var context_menu = $('<div/>', {
-        className: "dock_context"
-      });
-      
-      var context_menu_ul = $('<ul/>',{
-        
-      }).appendTo(context_menu);
-      
-      for (item in items) {
-        var context_menu_item = WebX.Dock.create_icon_context_item(items[item]);
-        context_menu_ul.append(context_menu_item);
-      }
-      $(icon).append(context_menu);
-      context_menu.css({
-        "top": "-"+(context_menu.height() + 22)+"px"
-      });
-    },
-    create_icon_context_item: function (item) {
-      var func = eval( "(" + item.click + ")" );
-      return $('<li/>', {
-        innerHTML: item.item.replace(/ /g,"&nbsp;")
-      }).bind('click', function () {
-        func();
-        return false;
-      });
-    },
-    center: function () {
-      var dockWidth = getDimensions($('#wxDock')).width;
-      $('#wxDock').css({
-        "marginLeft": -(dockWidth / 2) + "px"
-      });
-    },
-    hide: function () {
-      $('#wxDock').animate({
-        'margin-bottom': '-58px'
-      }, 420, 'easeOutExpo', function () {
-        $('#wxDock').data('state', 'closed');
-      });
-    },
-    show: function () {
-      $('#wxDock').animate({
-        'margin-bottom': '0px'
-      }, 420, 'easeOutExpo', function () {
-        $('#wxDock').data('state', 'open');
-      });
-    },
-    toggle: function () {
-      if ($('#wxDock').css('margin-bottom') === '0px') {
-        WebX.Dock.hide();
-      } else {
-        WebX.Dock.show();
-      }
-    }
-  },
   Dashboard: {
-  	init: function () {
-  		$('<div>', {
+    init: function () {
+      $('<div>', {
         id: "dashboardPanel"
       }).data({
         "dashboard_status": 0,
@@ -433,9 +188,9 @@ var WebX = {
       $('<div>', {
         id: "dbManageButton"
       }).appendTo(dbOverlay);
-  	},
-  	start: function () {
-  	  if ($('#dashboardPanel').data('dashboard_status') === 0) {
+    },
+    start: function () {
+      if ($('#dashboardPanel').data('dashboard_status') === 0) {
         $("div#dbManageButton").hide();
         $('div#dbOverlay').animate({
           opacity: "toggle"
@@ -467,9 +222,9 @@ var WebX = {
         $("div#dbOverlay").fadeOut(420);
         $('#dashboardPanel').data('dashboard_status', 0);
       }
-  	},
-  	drawer: function () {
-  	  if ($('#dashboardPanel').data('widget_drawer_status') === 0) {
+    },
+    drawer: function () {
+      if ($('#dashboardPanel').data('widget_drawer_status') === 0) {
         $('div#webxWrapper, div#dbOverlay').animate({
           marginTop: "-118px"
         }, {
@@ -508,7 +263,7 @@ var WebX = {
         });
         $('#dashboardPanel').data('widget_drawer_status', 0);
       }
-  	}
+    }
   },
   Data: {
     windows: {

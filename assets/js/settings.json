@@ -1,0 +1,172 @@
+{
+    "menubar": {
+      "finder": {
+        "Start": {
+          "About": {
+            "click": "false"
+          },
+          "Prefrences": {
+            "click": "false"
+          },
+          "Dock": {
+            "click": "false",
+            "list": {
+              "Hide": {
+                "click": "WebX.Dock.hide"
+              },
+              "Show": {
+                "click": "WebX.Dock.show"
+              },
+              "Toggle": {
+                "click": "WebX.Dock.toggle"
+              }
+            }
+          }
+        },
+        "Finder": {
+          "About Finder...": {
+            "click": "function(){ return false; }"
+          },
+          "Hide Finder": {
+            "click": "function(){ return false; }"
+          },
+          "Hide Others": {
+            "click": "function(){ return false; }"
+          }
+        }
+      },
+      "browser": {
+        "Start": {
+          "About": {
+            "click": "false"
+          },
+          "Prefrences": {
+            "click": "false"
+          },
+          "Dock": {
+            "click": "false",
+            "list": {
+              "Hide": {
+                "click": "WebX.Dock.hide"
+              },
+              "Show": {
+                "click": "WebX.Dock.show"
+              },
+              "Toggle": {
+                "click": "WebX.Dock.toggle"
+              }
+            }
+          }
+        },
+        "Browser": {
+          "About Browser...": {
+            "click": "function(){ return false; }"
+          },
+          "Hide Browser": {
+            "click": "function(){ return false; }"
+          },
+          "Hide Others": {
+            "click": "function(){ return false; }"
+          },
+          "Quit Browser": {
+            "click": "function(){ return false; }"
+          }
+        },
+        "File": {
+          "New Window": {
+            "click": "WebX.Browser.create"
+          },
+          "New Tab": {
+            "click": "false"
+          }
+        }
+      }
+    },
+      "dock":{
+          "finder":{
+              "name": "Finder",
+              "click": "WebX.Finder.create",
+              "right_click": "function(){ debug.log(\"finder right click\");}",
+              "right_click_menu": [{
+                  "item": "New Finder Window",
+                  "click": "function(){ debug.log(\"New Finder window click\");}"
+                },
+                {
+                  "item": "Hide",
+                  "click": "function(){ debug.log(\"Hide Finder click\");}"
+                }
+              ]
+          },
+          "dashboard":{
+              "name": "Dashboard",
+              "click": "WebX.Dashboard.start",
+              "right_click": "function(){ debug.log(\"dashboard right click\");}",
+              "right_click_menu": [{
+                  "item": "Show Dashboard",
+                  "click": "function(){ $(\"#wxDock_item_Dashboard\").find(\".iIcon\").click(); WebX.Dashboard.start(); }"
+                }
+              ]
+          },
+          "paste":{
+              "name": "Paste",
+              "click": "false",
+              "right_click": "function(){ debug.log(\"paste right click\");}",
+              "right_click_menu": [{
+                  "item": "Open",
+                  "click": "function(){ debug.log(\"Open Paste click\");}"
+                }
+              ]
+          },
+          "files":{
+              "name": "Files",
+              "click": "false",
+              "right_click": "function(){ debug.log(\"files right click\");}",
+              "right_click_menu": [{
+                  "item": "Open",
+                  "click": "function(){ debug.log(\"Open Files click\");}"
+                }
+              ]
+          },
+          "browser": {
+            "name": "Browser",
+            "click": "WebX.Browser.create",
+            "right_click": "function(){ debug.log(\"browser right click\");}",
+            "right_click_menu": [{
+                "item": "New Window",
+                "click": "function(){ debug.log(\"New Window Browser click\");}"
+              },
+              {
+                "item": "Hide",
+                "click": "function(){ debug.log(\"Hide Browser click\");}"
+              }
+            ]
+          },
+          "settings": {
+              "name": "Settings",
+              "click": "false",
+              "right_click": "function(){ debug.log(\"settings right click\");}",
+              "right_click_menu": [{
+                  "item": "Open",
+                  "click": "function(){ debug.log(\"Open Settings click\");}"
+                }
+              ]
+          },
+          "separator": {
+            
+          },
+          "trash": {
+              "name": "Trash",
+              "click": "false",
+              "right_click": "function(){ debug.log(\"trash right click\");}",
+              "right_click_menu": [{
+                  "item": "Open",
+                  "click": "function(){ debug.log(\"Open trash click\");}"
+                },
+                {
+                  "item": "Empty Trash",
+                  "click": "function(){ debug.log(\"Empty Trash click\");}"
+                }
+              ]
+          }
+      }
+  }

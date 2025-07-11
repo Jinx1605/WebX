@@ -25,7 +25,7 @@ WebX.Finder.prototype.create = function () {
     className: "button close"
   }).appendTo(finder_top_button_box).bind('click', function(){
     debug.log('close button clicked');
-    WebX.finder.toggle(finder);
+    WebX.Finder.toggle(finder);
   });
   
   $('<div/>', {
@@ -33,7 +33,7 @@ WebX.Finder.prototype.create = function () {
   }).appendTo(finder_top_button_box).bind('click', function(){
     debug.log('minimize button clicked');
     finder.hide("puff", {percent: 1}, 840);
-    WebX.Dock.create_minimized(finder.attr('id'),finder.attr('id'));
+    WebX.Dock.create_minimized_icon(finder.attr('id'),finder.attr('id'), 'Finder');
   });
   
   $('<div/>', {
@@ -186,11 +186,12 @@ WebX.Finder.prototype.create = function () {
 };
 
 WebX.Finder.prototype.maximize = function (ele) {
+  console.log('maximizing finder: ' + ele.id);
   var width_modifier = 0;
   var height_modifier = 0;
   var Finder_size = getDimensions(document.getElementsByTagName('body')[0]);
   if (!$(ele).data('sizeState') || $(ele).data('sizeState') !== "max") {
-    var eleSize = getDimensions($(ele));
+    var eleSize = getDimensions(document.getElementById(ele));
     $(ele).data({
       "originalLeft": $(ele).css("left"),
       "originalTop": $(ele).css("top"),
@@ -252,8 +253,8 @@ WebX.Finder.prototype.open = function (ele, opt) {
 
 WebX.Finder.prototype.toggle = function (ele) {
   if ($(ele).is(':visible')) {
-    WebX.finder.close(ele);
+    WebX.Finder.close(ele);
   } else if (!$(ele).is(':visible')) {
-    WebX.finder.open(ele);
+    WebX.Finder.open(ele);
   }
 };
