@@ -86,7 +86,20 @@ const Animation = {
 
     // Helper functions
     fadeIn(element, duration = 300, easing = 'easeOutExpo') {
-        return this.transitions.opacity(element, 1, duration, easing);
+        // First ensure the element is visible but transparent
+        element.style.opacity = '0';
+        element.style.display = 'block';
+        
+        // Force a reflow to ensure the initial state is applied before animation starts
+        void element.offsetHeight;
+        
+        // Add a small delay to ensure the browser has applied the initial style
+        return new Promise(resolve => {
+            requestAnimationFrame(() => {
+                // Then animate the opacity
+                this.transitions.opacity(element, 1, duration, easing).then(resolve);
+            });
+        });
     },
 
     fadeOut(element, duration = 300, easing = 'easeOutExpo') {

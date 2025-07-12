@@ -30,7 +30,7 @@ window.WebX = {
     this.Dock = new WebX.Dock();
     
     const wallpaperDiv = createEl('div');
-    wallpaperDiv.innerHTML = '<img id="wallpaper" src="https://unsplash.it/1280/720/?random" alt="" title="" />';
+    wallpaperDiv.innerHTML = '<img id="wallpaper" src="assets/imgs/wallpaper/Vitrieth_by_iumazark.jpg" alt="" title="" />';
     webx_wrapper.appendChild(wallpaperDiv);
 
     const starter = Utils.$$('#starter');
@@ -38,7 +38,11 @@ window.WebX = {
 
     WebX.Menubar.init();
     WebX.Dock.init();
-    WebX.Dashboard.init();
+    
+    // Check if Dashboard is defined before initializing
+    if (this.Dashboard && typeof this.Dashboard.init === 'function') {
+      WebX.Dashboard.init();
+    }
   },
   Menubar: {
     init() {
@@ -148,13 +152,13 @@ window.WebX = {
       dashboardPanel.dataset.dashboardStatus = '0';
       dashboardPanel.dataset.widgetDrawerStatus = '0';
 
-      var dbOverlay = $('<div>', {
-        id: "dbOverlay",
-        click: function () {
-          WebX.Dashboard.start();
-          return false;
-        }
-      }).appendTo('div#webxWrapper');
+      const dbOverlay = createEl('div', { id: "dbOverlay" });
+      Utils.$$('#webxWrapper').appendChild(dbOverlay);
+      dbOverlay.addEventListener('click', function(e) {
+        e.preventDefault();
+        WebX.Dashboard.start();
+        return false;
+      });
 
       $('<div>', {
         id: "dbDrawerButton",
@@ -170,76 +174,117 @@ window.WebX = {
     },
 
     start: function () {
-      const dashboardPanel = document.getElementById('dashboardPanel');
-      const dbOverlay = document.getElementById('dbOverlay');
-      const dbManageButton = document.getElementById('dbManageButton');
-      const dbDrawerButton = document.getElementById('dbDrawerButton');
-      const webxWrapper = document.getElementById('webxWrapper');
+      const elements = {
+        dashboardPanel: Utils.$$('#dashboardPanel'),
+        dbOverlay: Utils.$$('#dbOverlay'),
+        dbManageButton: Utils.$$('#dbManageButton'),
+        dbDrawerButton: Utils.$$('#dbDrawerButton'),
+        webxWrapper: Utils.$$('#webxWrapper')
+      };
 
-      if (dashboardPanel.dataset.dashboardStatus === '0') {
-        dbManageButton.style.display = 'none';
-        $(dbOverlay).fadeToggle(420);
-        dashboardPanel.dataset.dashboardStatus = '1';
-      } else if (dashboardPanel.dataset.dashboardStatus === '1' && dashboardPanel.dataset.widgetDrawerStatus === '1') {
-        $(webxWrapper).add(dbOverlay).animate({
-          marginTop: '0px'
-        }, {
-          queue: false,
-          duration: 420
+      // Simplified state handling - toggle dashboard on/off with a single click
+      const isActive = elements.dashboardPanel.dataset.dashboardStatus === '1';
+      const animationDuration = 1420; // Increased to make animation last longer (1.42 seconds)
+      
+      if (!isActive) {
+        // Turn dashboard ON
+        elements.dbManageButton.style.display = 'none';
+        
+        // Show overlay with fade effect
+        elements.dbOverlay.style.opacity = '0';
+        elements.dbOverlay.style.display = 'block';
+        Animation.fadeIn(elements.dbOverlay, animationDuration);
+        
+        // Set state to active
+        elements.dashboardPanel.dataset.dashboardStatus = '1';
+      } else {
+        // Turn dashboard OFF - also close drawer if it's open
+        if (elements.dashboardPanel.dataset.widgetDrawerStatus === '1') {
+          // Reset marginTop if drawer was open
+          elements.webxWrapper.style.transition = `margin-top ${animationDuration}ms ${Animation.easings.easeOutExpo}`;
+          elements.dbOverlay.style.transition = `margin-top ${animationDuration}ms ${Animation.easings.easeOutExpo}`;
+          elements.webxWrapper.style.marginTop = '0px';
+          elements.dbOverlay.style.marginTop = '0px';
+          
+          // Reset drawer button rotation
+          elements.dbDrawerButton.style.transition = `transform ${animationDuration}ms ${Animation.easings.easeOutExpo}`;
+          elements.dbDrawerButton.style.transform = 'rotate(0deg)';
+          
+          // Hide manage button when closing drawer
+          Animation.fadeOut(elements.dbManageButton, animationDuration).then(() => {
+            elements.dbManageButton.style.display = 'none';
+          });
+          
+          // Reset widget drawer state
+          elements.dashboardPanel.dataset.widgetDrawerStatus = '0';
+        }
+        
+        // Fade out overlay
+        Animation.fadeOut(elements.dbOverlay, animationDuration).then(() => {
+          elements.dbOverlay.style.display = 'none';
         });
-        $(dbDrawerButton).animate({
-          rotate: '+=135deg'
-        }, {
-          queue: false,
-          duration: 420
-        });
-        $(dbManageButton).fadeToggle(420);
-        $(dbOverlay).fadeOut(420);
-        dashboardPanel.dataset.widgetDrawerStatus = '0';
-        dashboardPanel.dataset.dashboardStatus = '0';
-      } else if (dashboardPanel.dataset.dashboardStatus === '1') {
-        $(dbOverlay).fadeOut(420);
-        dashboardPanel.dataset.dashboardStatus = '0';
+        
+        // Set state to inactive
+        elements.dashboardPanel.dataset.dashboardStatus = '0';
       }
     },
 
     drawer: function () {
-      const dashboardPanel = document.getElementById('dashboardPanel');
-      const dbOverlay = document.getElementById('dbOverlay');
-      const dbManageButton = document.getElementById('dbManageButton');
-      const dbDrawerButton = document.getElementById('dbDrawerButton');
-      const webxWrapper = document.getElementById('webxWrapper');
+      const elements = {
+        dashboardPanel: Utils.$$('#dashboardPanel'),
+        dbOverlay: Utils.$$('#dbOverlay'),
+        dbManageButton: Utils.$$('#dbManageButton'),
+        dbDrawerButton: Utils.$$('#dbDrawerButton'),
+        webxWrapper: Utils.$$('#webxWrapper')
+      }
 
-      if (dashboardPanel.dataset.widgetDrawerStatus === '0') {
-        $(webxWrapper).add(dbOverlay).animate({
-          marginTop: '-118px'
-        }, {
-          duration: 420,
-          queue: false
+      const animateDrawerAndManageButton = (isOpening) => {
+        const marginValue = isOpening ? '-118px' : '0px';
+        const rotationValue = isOpening ? -135 : 0;
+        const animationDuration = 1420; // Increased to make animation last longer (1.42 seconds)
+        
+        // Setup the manage button properly
+        if (isOpening) {
+          // Make sure it's completely hidden before fadeIn
+          elements.dbManageButton.style.opacity = '0';
+          elements.dbManageButton.style.display = 'block';
+          // Force a reflow to ensure opacity is applied
+          void elements.dbManageButton.offsetHeight;
+        }
+        
+        // Setup transitions with longer duration
+        elements.webxWrapper.style.transition = `margin-top ${animationDuration}ms ${Animation.easings.easeOutExpo}`;
+        elements.dbOverlay.style.transition = `margin-top ${animationDuration}ms ${Animation.easings.easeOutExpo}`;
+        elements.dbDrawerButton.style.transition = `transform ${animationDuration}ms ${Animation.easings.easeOutExpo}`;
+        
+        // Start animations simultaneously
+        elements.webxWrapper.style.marginTop = marginValue;
+        elements.dbOverlay.style.marginTop = marginValue;
+        elements.dbDrawerButton.style.transform = `rotate(${rotationValue}deg)`;
+        
+        // Use requestAnimationFrame to ensure CSS changes have been applied
+        // before starting the fade animation
+        requestAnimationFrame(() => {
+          // Animate manage button in sync with the same duration
+          if (isOpening) {
+            Animation.fadeIn(elements.dbManageButton, animationDuration);
+          } else {
+            Animation.fadeOut(elements.dbManageButton, animationDuration).then(() => {
+              elements.dbManageButton.style.display = 'none';
+            });
+          }
         });
-        $(dbDrawerButton).animate({
-          rotate: '-=135deg'
-        }, {
-          queue: false,
-          duration: 420
-        });
-        $(dbManageButton).fadeToggle(420);
-        dashboardPanel.dataset.widgetDrawerStatus = '1';
-      } else if (dashboardPanel.dataset.widgetDrawerStatus === '1') {
-        $(webxWrapper).add(dbOverlay).animate({
-          marginTop: '0px'
-        }, {
-          duration: 420,
-          queue: false
-        });
-        $(dbDrawerButton).animate({
-          rotate: '+=135deg'
-        }, {
-          queue: false,
-          duration: 420
-        });
-        $(dbManageButton).fadeToggle(420);
-        dashboardPanel.dataset.widgetDrawerStatus = '0';
+        
+        // Update state
+        elements.dashboardPanel.dataset.widgetDrawerStatus = isOpening ? '1' : '0';
+      };
+
+      if (elements.dashboardPanel.dataset.widgetDrawerStatus === '0') {
+        // Opening the drawer
+        animateDrawerAndManageButton(true);
+      } else if (elements.dashboardPanel.dataset.widgetDrawerStatus === '1') {
+        // Closing the drawer
+        animateDrawerAndManageButton(false);
       }
     }
   },
@@ -373,7 +418,27 @@ WebX.Dock.prototype.create_icon_tip = function (icon, text) {
   theTip.appendChild(tipText);
   icon.appendChild(theTip);
   const tipPos = document.getElementById(tip_id);
-  const tipOff = Utils.getDimensions(tipPos).width / 2;
+  
+  // Get accurate measurements of the tooltip for proper centering
+  // First ensure it's visible for accurate measurement
+  const originalVisibility = tipPos.style.visibility;
+  const originalDisplay = tipPos.style.display;
+  const originalPosition = tipPos.style.position;
+  
+  tipPos.style.visibility = 'hidden';
+  tipPos.style.display = 'block';
+  tipPos.style.position = 'absolute';
+  
+  // Get dimensions and calculate half-width for centering
+  const tipWidth = tipPos.offsetWidth;
+  const tipOff = tipWidth / 2;
+  
+  // Restore original styles
+  tipPos.style.visibility = originalVisibility;
+  tipPos.style.display = originalDisplay;
+  tipPos.style.position = originalPosition;
+  
+  // Set margin to center the tooltip
   tipPos.style.marginLeft = '-' + tipOff + 'px';
 };
 
@@ -384,7 +449,7 @@ WebX.Dock.prototype.create_minimized_icon = function (name, item, type, cb = nul
     name: item_name,
     id: item_id,
     click: `function(){ Utils.$$('#${item}').style.display = 'block'; Utils.$$('#${item_id}').remove(); WebX.Dock.center(); }`,
-    right_click: `function(){ console.log('Minimized item right click'); }`,
+    right_click: `function(){ }`,
     right_click_menu: [
       {
         item: 'Open ' + item_name,
@@ -501,8 +566,6 @@ WebX.Browser.prototype.create = function (site_url) {
   });
   browser_top_button_box.appendChild(br_close_btn);
   br_close_btn.addEventListener('click', function () {
-    //debug.log('close button clicked');
-    console.log("browser close button clicked :" + browser.id);
     WebX.Browser.toggle(browser);
   });
 
@@ -513,9 +576,6 @@ WebX.Browser.prototype.create = function (site_url) {
   // Minimize button logic
    
   br_min_button.addEventListener('click', function(){
-    //debug.log('minimize button clicked');
-    //console.log(finder);
-
     WebX.Dock.create_minimized_icon(browser.id, browser.id, 'Browser', function() {
       const dockIcon = Utils.$$('#dock_' + browser.id);
       if (!dockIcon) return;
@@ -774,8 +834,6 @@ WebX.Finder.prototype.create = function () {
   finder_top_button_box.appendChild(minimizeButton);
   
   minimizeButton.addEventListener('click', function(){
-    //debug.log('minimize button clicked');
-    //console.log(finder);
     WebX.Dock.create_minimized_icon(finder.id, finder.id, 'Finder', function() {
       const dockIcon = Utils.$$('#dock_' + finder.id);
       if (!dockIcon) return;
@@ -1211,99 +1269,10 @@ WebX.create = {
  * opening, and toggling visibility. It allows for a consistent window interface
  * across different window types in the WebX application.
  */
+/**
+ * Base window management class - Currently used as a placeholder for future functionality
+ */
 WebX.Window = function() {};
-
-/**
- * Initialize a window with the provided options
- * 
- * @param {HTMLElement} element - The DOM element representing the window
- * @param {Object} options - Configuration options for the window
- * @param {string} options.windowType - Type of window ('generic', 'browser', 'finder', etc.)
- * @param {number} options.width - Initial width in pixels
- * @param {number} options.height - Initial height in pixels
- * @param {number} options.minWidth - Minimum allowed width in pixels
- * @param {number} options.minHeight - Minimum allowed height in pixels
- * @param {string|Array} options.position - Initial position ('center', 'random', or [x,y] coordinates)
- * @param {string} options.title - Window title text
- * @param {boolean} options.resizable - Whether the window can be resized
- * @param {boolean} options.draggable - Whether the window can be dragged
- * @returns {WebX.Window} - The window instance for chaining
- */
-WebX.Window.prototype.init = function(element, options = {}) {
-  // Store references
-  this.element = element;
-  this.options = Object.assign({
-    windowType: 'generic',
-    width: 500,
-    height: 350,
-    minWidth: 500,
-    minHeight: 135,
-    position: 'center',
-    title: 'Window',
-    resizable: true,
-    draggable: true
-  }, options);
-
-  // Set initial position if not already set
-  if (!element.style.left || !element.style.top) {
-    this.position(this.options.position);
-  }
-
-  // Initialize resize and drag functionality
-  if (this.options.draggable || this.options.resizable) {
-    const handle = this.options.handle || element.querySelector('.wxWindow_top') || element;
-    
-    Utils.DragResize.init(element, {
-      handle: handle, 
-      containment: Utils.$$('#webxWrapper'),
-      minWidth: this.options.minWidth,
-      minHeight: this.options.minHeight,
-      onDragStart: () => {
-        element.style.zIndex = Utils.getNextZIndex();
-      }
-    }).bringToFront();
-  }
-
-  return this;
-};
-
-/**
- * Position the window on the screen
- * 
- * @param {string|Array} position - Positioning method ('center', 'random', or [x,y] coordinates)
- * @returns {WebX.Window} - The window instance for chaining
- */
-WebX.Window.prototype.position = function(position) {
-  const wrapper = Utils.$$('#webxWrapper');
-  const wrapperRect = wrapper ? wrapper.getBoundingClientRect() : { width: window.innerWidth, height: window.innerHeight };
-  const eleRect = this.element.getBoundingClientRect();
-  
-  let left, top;
-  
-  // Determine position based on the specified positioning method
-  if (position === 'center') {
-    // Center in the wrapper/viewport
-    left = Math.max(0, (wrapperRect.width - eleRect.width) / 2);
-    top = Math.max(0, (wrapperRect.height - eleRect.height) / 2);
-  } else if (position === 'random') {
-    // Random position within the wrapper/viewport
-    left = Math.random() * (wrapperRect.width - eleRect.width);
-    top = Math.random() * (wrapperRect.height - eleRect.height);
-  } else if (Array.isArray(position) && position.length === 2) {
-    // Explicit coordinates
-    [left, top] = position;
-  } else {
-    // Default position
-    left = 50;
-    top = 50;
-  }
-  
-  // Apply the calculated position
-  this.element.style.left = `${left}px`;
-  this.element.style.top = `${top}px`;
-  
-  return this;
-};
 
 /**
  * Maximize or restore a window
@@ -1683,10 +1652,48 @@ WebX.Window.create = function(options = {}) {
     const windowInstance = new WebX.Window();
     windowInstance.element = window;
     windowInstance.options = settings;
-    windowInstance.position(settings.position);
     
-    // Initialize window behavior
-    windowInstance.init(window, settings);
+    // Position the window based on settings
+    if (settings.position) {
+      if (settings.position === 'center') {
+        // Center in viewport
+        const wrapperRect = wrapper ? wrapper.getBoundingClientRect() : 
+          {width: window.innerWidth, height: window.innerHeight, left: 0, top: 0};
+        const menubar = Utils.$$('#wxMenubar');
+        const menubarHeight = menubar ? menubar.getBoundingClientRect().height : 0;
+        
+        const windowWidth = parseInt(window.style.width);
+        const windowHeight = parseInt(window.style.height);
+        
+        window.style.left = `${Math.max(0, (wrapperRect.width - windowWidth) / 2)}px`;
+        window.style.top = `${Math.max(menubarHeight, (wrapperRect.height - windowHeight) / 2)}px`;
+      } else if (settings.position === 'random') {
+        // Random position within wrapper
+        const wrapperRect = wrapper ? wrapper.getBoundingClientRect() : 
+          {width: window.innerWidth, height: window.innerHeight, left: 0, top: 0};
+        const menubar = Utils.$$('#wxMenubar');
+        const menubarHeight = menubar ? menubar.getBoundingClientRect().height : 0;
+        
+        const windowWidth = parseInt(window.style.width);
+        const windowHeight = parseInt(window.style.height);
+        
+        const maxLeft = Math.max(0, wrapperRect.width - windowWidth);
+        const maxTop = Math.max(menubarHeight, wrapperRect.height - windowHeight);
+        
+        window.style.left = `${Math.floor(Math.random() * maxLeft)}px`;
+        window.style.top = `${Math.floor(Math.random() * (maxTop - menubarHeight)) + menubarHeight}px`;
+      } else if (Array.isArray(settings.position) && settings.position.length === 2) {
+        // Explicit [x,y] coordinates
+        window.style.left = `${settings.position[0]}px`;
+        window.style.top = `${settings.position[1]}px`;
+      } else if (typeof settings.position === 'object') {
+        // Object with explicit coordinates
+        if (settings.position.left !== undefined) window.style.left = `${settings.position.left}px`;
+        if (settings.position.top !== undefined) window.style.top = `${settings.position.top}px`;
+      }
+    }
+    
+    // No need for separate init - already done within the create function
     
     // Track window in WebX.Data
     if (WebX.Data && WebX.Data.windows) {
