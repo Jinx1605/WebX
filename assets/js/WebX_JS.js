@@ -29,9 +29,6 @@ window.WebX = {
     this.Finder = new WebX.Finder();
     this.Dock = new WebX.Dock();
     
-    // Instead of creating a Window instance here, we'll do it after the Window class is loaded
-    // The Window constructor is defined in WebX.Window.js which is loaded after this file
-    
     const wallpaperDiv = createEl('div');
     wallpaperDiv.innerHTML = '<img id="wallpaper" src="https://unsplash.it/1280/720/?random" alt="" title="" />';
     webx_wrapper.appendChild(wallpaperDiv);
@@ -1203,5 +1200,506 @@ WebX.create = {
       
       return win;
     }
+  }
+};
+
+/**
+ * WebX.Window - Window component that provides core window management functionality
+ * 
+ * This class serves as a foundation for both the Browser and Finder components,
+ * providing shared window functionality like positioning, maximizing, closing,
+ * opening, and toggling visibility. It allows for a consistent window interface
+ * across different window types in the WebX application.
+ */
+WebX.Window = function() {};
+
+/**
+ * Initialize a window with the provided options
+ * 
+ * @param {HTMLElement} element - The DOM element representing the window
+ * @param {Object} options - Configuration options for the window
+ * @param {string} options.windowType - Type of window ('generic', 'browser', 'finder', etc.)
+ * @param {number} options.width - Initial width in pixels
+ * @param {number} options.height - Initial height in pixels
+ * @param {number} options.minWidth - Minimum allowed width in pixels
+ * @param {number} options.minHeight - Minimum allowed height in pixels
+ * @param {string|Array} options.position - Initial position ('center', 'random', or [x,y] coordinates)
+ * @param {string} options.title - Window title text
+ * @param {boolean} options.resizable - Whether the window can be resized
+ * @param {boolean} options.draggable - Whether the window can be dragged
+ * @returns {WebX.Window} - The window instance for chaining
+ */
+WebX.Window.prototype.init = function(element, options = {}) {
+  // Store references
+  this.element = element;
+  this.options = Object.assign({
+    windowType: 'generic',
+    width: 500,
+    height: 350,
+    minWidth: 500,
+    minHeight: 135,
+    position: 'center',
+    title: 'Window',
+    resizable: true,
+    draggable: true
+  }, options);
+
+  // Set initial position if not already set
+  if (!element.style.left || !element.style.top) {
+    this.position(this.options.position);
+  }
+
+  // Initialize resize and drag functionality
+  if (this.options.draggable || this.options.resizable) {
+    const handle = this.options.handle || element.querySelector('.wxWindow_top') || element;
+    
+    Utils.DragResize.init(element, {
+      handle: handle, 
+      containment: Utils.$$('#webxWrapper'),
+      minWidth: this.options.minWidth,
+      minHeight: this.options.minHeight,
+      onDragStart: () => {
+        element.style.zIndex = Utils.getNextZIndex();
+      }
+    }).bringToFront();
+  }
+
+  return this;
+};
+
+/**
+ * Position the window on the screen
+ * 
+ * @param {string|Array} position - Positioning method ('center', 'random', or [x,y] coordinates)
+ * @returns {WebX.Window} - The window instance for chaining
+ */
+WebX.Window.prototype.position = function(position) {
+  const wrapper = Utils.$$('#webxWrapper');
+  const wrapperRect = wrapper ? wrapper.getBoundingClientRect() : { width: window.innerWidth, height: window.innerHeight };
+  const eleRect = this.element.getBoundingClientRect();
+  
+  let left, top;
+  
+  // Determine position based on the specified positioning method
+  if (position === 'center') {
+    // Center in the wrapper/viewport
+    left = Math.max(0, (wrapperRect.width - eleRect.width) / 2);
+    top = Math.max(0, (wrapperRect.height - eleRect.height) / 2);
+  } else if (position === 'random') {
+    // Random position within the wrapper/viewport
+    left = Math.random() * (wrapperRect.width - eleRect.width);
+    top = Math.random() * (wrapperRect.height - eleRect.height);
+  } else if (Array.isArray(position) && position.length === 2) {
+    // Explicit coordinates
+    [left, top] = position;
+  } else {
+    // Default position
+    left = 50;
+    top = 50;
+  }
+  
+  // Apply the calculated position
+  this.element.style.left = `${left}px`;
+  this.element.style.top = `${top}px`;
+  
+  return this;
+};
+
+/**
+ * Maximize or restore a window
+ * 
+ * This method toggles between maximized and normal window states. When maximizing,
+ * it stores the original dimensions and position for later restoration.
+ * 
+ * @param {HTMLElement} ele - The window element to maximize (optional, uses this.element if not provided)
+ * @returns {WebX.Window} - The window instance for chaining
+ */
+WebX.Window.prototype.maximize = function(ele) {
+  // Support both direct element parameter and this.element
+  ele = ele || this.element;
+  if (!ele) return this;
+  
+  // Get the appropriate modifiers based on window type
+  let widthModifier = 0;
+  let heightModifier = 0;
+  
+  // Apply different spacing for finder windows
+  if (ele.dataset.windowType === 'finder') {
+    widthModifier = 136;
+    heightModifier = 27;
+  }
+  
+  // Get wrapper dimensions
+  const wrapper = Utils.$$('#webxWrapper');
+  const wrapperRect = wrapper ? Utils.getDimensions(wrapper) : { 
+    width: window.innerWidth, 
+    height: window.innerHeight 
+  };
+  
+  // Get menubar height
+  const menubar = Utils.$$('#wxMenubar');
+  const menubarHeight = menubar ? Utils.getDimensions(menubar).height : 0;
+  
+  // Store original state if not already stored
+  if (!ele.dataset.sizeState || ele.dataset.sizeState !== "max") {
+    const eleRect = Utils.getDimensions(ele);
+    
+    // Store original dimensions
+    ele.dataset.originalLeft = ele.style.left;
+    ele.dataset.originalTop = ele.style.top;
+    ele.dataset.originalHeight = eleRect.height;
+    ele.dataset.originalWidth = eleRect.width;
+    ele.dataset.sizeState = "min";
+  }
+  
+  if (ele.dataset.sizeState === "min") {
+    // Maximize the window
+    ele.style.width = `${wrapperRect.width}px`;
+    ele.style.height = `${wrapperRect.height - menubarHeight}px`;
+    ele.style.top = `${menubarHeight}px`;
+    ele.style.left = `${widthModifier}px`;
+    
+    // Adjust content size
+    const bodyContent = ele.querySelector('.wxWindow_body, .wxBrowser_iframe, .wxFinder_content');
+    if (bodyContent) {
+      bodyContent.style.width = '100%';
+      bodyContent.style.height = `${parseInt(ele.style.height) - 60 - heightModifier}px`;
+    }
+    
+    // Update state
+    ele.dataset.sizeState = "max";
+  } else {
+    // Restore the window to its original size
+    ele.style.width = `${ele.dataset.originalWidth}px`;
+    ele.style.height = `${ele.dataset.originalHeight}px`;
+    ele.style.top = ele.dataset.originalTop;
+    ele.style.left = ele.dataset.originalLeft;
+    
+    // Adjust content size
+    const bodyContent = ele.querySelector('.wxWindow_body, .wxBrowser_iframe, .wxFinder_content');
+    if (bodyContent) {
+      bodyContent.style.width = '100%';
+      const heightAdjustment = (ele.dataset.windowType === 'finder') ? heightModifier - 2 : heightModifier;
+      bodyContent.style.height = `${parseInt(ele.dataset.originalHeight) - 60 - heightAdjustment}px`;
+    }
+    
+    // Update state
+    ele.dataset.sizeState = "min";
+  }
+  
+  return this;
+};
+
+/**
+ * Close a window with a fade-out animation
+ * 
+ * @param {HTMLElement} ele - The window element to close (optional, uses this.element if not provided)
+ * @returns {WebX.Window} - The window instance for chaining
+ */
+WebX.Window.prototype.close = function(ele) {
+  // Support both direct element parameter and this.element
+  ele = ele || this.element;
+  if (!ele) return this;
+  
+  // Initialize viewState if not already set
+  if (!ele.dataset.viewState) {
+    ele.dataset.viewState = "";
+  }
+  
+  // Only close if not already closed
+  if (ele.dataset.viewState !== "closed") {
+    // Use Animation API instead of jQuery fadeOut
+    ele.animate(
+      [
+        { opacity: 1 },
+        { opacity: 0 }
+      ],
+      { duration: 420, easing: 'ease-out' }
+    ).onfinish = () => {
+      ele.style.display = 'none';
+    };
+    
+    // Update window state
+    ele.dataset.viewState = "closed";
+  }
+  
+  return this;
+};
+
+/**
+ * Open a window with a fade-in animation
+ * 
+ * @param {HTMLElement} ele - The window element to open (optional, uses this.element if not provided)
+ * @param {Object} opt - Additional options (not currently used)
+ * @returns {WebX.Window} - The window instance for chaining
+ */
+WebX.Window.prototype.open = function(ele, opt) {
+  // Support both direct element parameter and this.element
+  ele = ele || this.element;
+  if (!ele) return this;
+  
+  // Initialize viewState if not already set
+  if (!ele.dataset.viewState) {
+    ele.dataset.viewState = "";
+  }
+  
+  // Only open if not already open
+  if (ele.dataset.viewState !== "open") {
+    // Make sure it's displayed but initially invisible
+    ele.style.display = 'block';
+    ele.style.opacity = 0;
+    
+    // Use Animation API instead of jQuery fadeIn
+    ele.animate(
+      [
+        { opacity: 0 },
+        { opacity: 1 }
+      ],
+      { duration: 420, easing: 'ease-in' }
+    ).onfinish = () => {
+      ele.style.opacity = 1;
+    };
+    
+    // Update window state
+    ele.dataset.viewState = "open";
+  }
+  
+  return this;
+};
+
+/**
+ * Toggle window visibility - opens a closed window or closes an open window
+ * If the window doesn't exist and a string selector is provided, creates a new window
+ * 
+ * @param {HTMLElement|string} ele - The window element or selector
+ * @returns {WebX.Window} - The window instance for chaining
+ */
+WebX.Window.prototype.toggle = function(ele) {
+  // If we have a string selector, find or create the window
+  if (typeof ele === 'string') {
+    const windowEl = document.querySelector(ele);
+    
+    if (!windowEl) {
+      // Need to create the window
+      let windowTitle, windowContent, windowType;
+      
+      // Determine window properties based on the selector
+      switch (ele.replace('#wxWindow_', '')) {
+        case 'Settings':
+          windowTitle = 'Settings';
+          windowContent = 'Settings will go here.';
+          windowType = 'finder';
+          break;
+        default:
+          windowTitle = 'Title';
+          windowContent = '';
+          windowType = 'finder';
+          break;
+      }
+      
+      // Create the window
+      return WebX.Window.create({
+        type: windowType,
+        id: ele.replace('#', ''),
+        title: windowTitle,
+        content: windowContent,
+        width: 357,
+        height: 287
+      });
+    }
+    
+    ele = windowEl;
+  }
+  
+  // Support both direct element parameter and this.element
+  ele = ele || this.element;
+  if (!ele) return this;
+  
+  // Toggle window visibility
+  if (ele.style.display === 'none' || ele.dataset.viewState === "closed") {
+    return this.open(ele);
+  } else {
+    return this.close(ele);
+  }
+};
+
+/**
+ * Create a new window
+ * 
+ * Factory method that creates and initializes a window with the specified options.
+ * Handles all DOM creation, event binding, and initialization.
+ * 
+ * @param {Object} options - Configuration options for the window
+ * @param {string} options.type - Type of window ('generic', 'browser', 'finder', etc.)
+ * @param {number} options.width - Window width in pixels
+ * @param {number} options.height - Window height in pixels
+ * @param {string} options.id - Unique identifier for the window
+ * @param {string} options.title - Window title
+ * @param {string|HTMLElement} options.content - Content for the window
+ * @param {string|Array} options.position - Window position ('center', 'random', or [x,y] coordinates)
+ * @returns {HTMLElement|null} - The created window element or null if creation failed
+ */
+WebX.Window.create = function(options = {}) {
+  try {
+    // Make sure Utils and createEl are available
+    if (typeof Utils === 'undefined' || typeof createEl !== 'function') {
+      console.error('Utils or createEl not available for WebX.Window.create');
+      return null;
+    }
+    
+    // Set default options
+    const defaultOptions = {
+      type: 'generic',    // 'browser', 'finder', etc.
+      width: 500,
+      height: 350,
+      id: `wxWindow_${Math.floor(Math.random() * 10000)}`,
+      title: 'Window',
+      content: '',
+      position: 'center'  // 'center', 'random', or [x, y]
+    };
+    
+    const settings = Object.assign({}, defaultOptions, options);
+    
+    // Create base window element
+    const window = createEl('div', {
+      className: `wx_window wx${settings.type.charAt(0).toUpperCase() + settings.type.slice(1)}`,
+      id: settings.id
+    });
+    
+    // Store window type
+    window.dataset.windowType = settings.type;
+    
+    // Set initial dimensions
+    window.style.width = `${settings.width}px`;
+    window.style.height = `${settings.height}px`;
+    
+    // Add to wrapper
+    const wrapper = Utils.$$('#webxWrapper');
+    if (wrapper) {
+      wrapper.appendChild(window);
+    } else {
+      document.body.appendChild(window);
+      console.warn('webxWrapper not found, appending window to document.body');
+    }
+    
+    // Create window top bar
+    const windowTop = createEl('div', {
+      className: `wx${settings.type.charAt(0).toUpperCase() + settings.type.slice(1)}_top`
+    });
+    window.appendChild(windowTop);
+    
+    // Create permanent elements container
+    const topPerms = createEl('div', {
+      className: `wx${settings.type.charAt(0).toUpperCase() + settings.type.slice(1)}_top_permanents`
+    });
+    windowTop.appendChild(topPerms);
+    
+    // Create window title
+    const windowTitle = createEl('div', {
+      className: `wx${settings.type.charAt(0).toUpperCase() + settings.type.slice(1)}_title`,
+      text: settings.title
+    });
+    topPerms.appendChild(windowTitle);
+    
+    // Create button box
+    const buttonBox = createEl('div', {
+      className: `wx${settings.type.charAt(0).toUpperCase() + settings.type.slice(1)}_buttons`
+    });
+    topPerms.appendChild(buttonBox);
+    
+    // Create close button
+    const closeBtn = createEl('div', {
+      className: "button close"
+    });
+    buttonBox.appendChild(closeBtn);
+    closeBtn.addEventListener('click', function() {
+      const windowInstance = new WebX.Window();
+      windowInstance.element = window;
+      windowInstance.close();
+    });
+    
+    // Create minimize button
+    const minBtn = createEl('div', {
+      className: "button minimize"
+    });
+    buttonBox.appendChild(minBtn);
+    minBtn.addEventListener('click', function() {
+      // Create minimized icon in dock
+      WebX.Dock.create_minimized_icon(window.id, window.id, settings.type, function() {
+        const dockIcon = Utils.$$('#dock_' + window.id);
+        if (!dockIcon) return;
+      
+        const dockRect = dockIcon.getBoundingClientRect();
+        const targetPoint = {
+          x: dockRect.left + (dockRect.width / 2),
+          y: dockRect.top + (dockRect.height / 2)
+        };
+        
+        // Animate window to dock using genie effect or fallback animation
+        setTimeout(() => {
+          if (typeof Animation !== 'undefined' && Animation.genie) {
+            Animation.genie(window, {
+              duration: 700,
+              target: targetPoint,
+              onComplete: () => {
+                window.style.display = 'none';
+              }
+            });
+          } else {
+            // Fallback animation
+            window.animate(
+              [
+                { transform: 'scale(1)', opacity: 1 },
+                { transform: 'scale(0.1)', opacity: 0 }
+              ],
+              { duration: 700, easing: 'ease-in' }
+            ).onfinish = () => {
+              window.style.display = 'none';
+            };
+          }
+        }, 100);
+      });
+    });
+    
+    // Create maximize button
+    const maxBtn = createEl('div', {
+      className: "button maximize"
+    });
+    buttonBox.appendChild(maxBtn);
+    maxBtn.addEventListener('click', function() {
+      const windowInstance = new WebX.Window();
+      windowInstance.element = window;
+      windowInstance.maximize();
+    });
+    
+    // Create content area
+    const contentDiv = createEl('div', {
+      className: "wxWindow_body",
+      html: settings.content
+    });
+    window.appendChild(contentDiv);
+    
+    // Position the window
+    const windowInstance = new WebX.Window();
+    windowInstance.element = window;
+    windowInstance.options = settings;
+    windowInstance.position(settings.position);
+    
+    // Initialize window behavior
+    windowInstance.init(window, settings);
+    
+    // Track window in WebX.Data
+    if (WebX.Data && WebX.Data.windows) {
+      if (!WebX.Data.windows[settings.type]) {
+        WebX.Data.windows[settings.type] = [];
+      }
+      WebX.Data.windows[settings.type].push(window.id);
+    }
+    
+    // Return the created window element
+    return window;
+  } catch (error) {
+    console.error('Error creating window:', error);
+    return null;
   }
 };
