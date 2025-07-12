@@ -10,6 +10,14 @@ function createEl(tag, options = {}) {
 
 // Ensure WebX is defined in the global scope
 window.WebX = {
+  // Initialize data storage for application
+  Data: {
+    windows: {
+      browser: [],
+      finder: [],
+      generic: []
+    }
+  },
   init() {
     // Create main wrapper first
     const webx_wrapper = createEl('div', { id: 'webxWrapper' });
@@ -20,7 +28,10 @@ window.WebX = {
     this.Clock = new WebX.Clock();
     this.Finder = new WebX.Finder();
     this.Dock = new WebX.Dock();
-
+    
+    // Instead of creating a Window instance here, we'll do it after the Window class is loaded
+    // The Window constructor is defined in WebX.Window.js which is loaded after this file
+    
     const wallpaperDiv = createEl('div');
     wallpaperDiv.innerHTML = '<img id="wallpaper" src="https://unsplash.it/1280/720/?random" alt="" title="" />';
     webx_wrapper.appendChild(wallpaperDiv);
@@ -657,75 +668,80 @@ WebX.Browser.prototype.create = function (site_url) {
 };
 
 WebX.Browser.prototype.maximize = function (ele) {
-  var width_modifier = 0;
-  var height_modifier = 0;
-  var browser_size = Utils.getDimensions(document.getElementsByTagName('body')[0]);
-  if (!$(ele).data('sizeState') || $(ele).data('sizeState') !== "max") {
-    var eleSize = getDimensions($(ele));
-    $(ele).data({
-      "originalLeft": $(ele).css("left"),
-      "originalTop": $(ele).css("top"),
-      "originalHeight": eleSize.height,
-      "originalWidth": eleSize.width,
-      "sizeState": "min"
-    });
-  }
-  if ($(ele).data('sizeState') === "min") {
-    $(ele).css({
-      "width": browser_size.width + "px",
-      "height": browser_size.height - $('#menubar').outerHeight(true) + "px",
-      "top": $('#menubar').outerHeight(true) + "px",
-      "left": width_modifier + "px"
-    });
-    $(ele).find('.wxBrowser_iframe').css({
-      "width": "100%",
-      "height": ($(ele).outerHeight(false) - 60 - height_modifier) + "px"
-    });
-    $(ele).data('sizeState', "max");
+  // Make sure WebX.Window is available before using it
+  if (typeof WebX.Window === 'function') {
+    // Use the Window component's maximize method
+    const windowInstance = new WebX.Window();
+    windowInstance.maximize(ele);
   } else {
-    $(ele).css({
-      "width": $(ele).data('originalWidth') + "px",
-      "height": $(ele).data('originalHeight') + "px",
-      "top": $(ele).data('originalTop'),
-      "left": $(ele).data('originalLeft')
-    });
-    $(ele).find('.wxBrowser_iframe').css({
-      "width": "100%",
-      "height": ($(ele).data('originalHeight') - 60 - (($(ele).data('windowType') === 'finder') ? height_modifier - 2 : height_modifier)) + "px"
-    });
-    $(ele).data('sizeState', "min");
+    // Fallback for when WebX.Window isn't available yet
+    console.warn('WebX.Window not available, using fallback maximize');
+    
+    // Simple fallback implementation
+    if (ele && ele.style) {
+      if (!ele.dataset.isMaximized || ele.dataset.isMaximized === 'false') {
+        ele.dataset.isMaximized = 'true';
+        ele.style.width = '100%';
+        ele.style.height = 'calc(100% - 50px)';
+        ele.style.top = '50px';
+        ele.style.left = '0';
+      } else {
+        ele.dataset.isMaximized = 'false';
+        ele.style.width = '800px';
+        ele.style.height = '600px';
+        ele.style.top = '100px';
+        ele.style.left = '100px';
+      }
+    }
   }
 };
 
 WebX.Browser.prototype.close = function (ele) {
-  if (!$(ele).data('viewState')) {
-    $(ele).data({
-      "viewState": ""
-    });
-  }
-  if ($(ele).data('viewState') !== "closed") {
-    $(ele).fadeOut(420);
-    $(ele).data('viewState', "closed");
+  // Make sure WebX.Window is available before using it
+  if (typeof WebX.Window === 'function') {
+    // Use the Window component's close method
+    const windowInstance = new WebX.Window();
+    windowInstance.close(ele);
+  } else {
+    // Fallback for when WebX.Window isn't available yet
+    console.warn('WebX.Window not available, using fallback close');
+    if (ele && ele.style) {
+      ele.style.display = 'none';
+    }
   }
 };
 
 WebX.Browser.prototype.open = function (ele, opt) {
-  if (!$(ele).data('viewState')) {
-    $(ele).data({
-      "viewState": ""
-    });
-  }
-  if ($(ele).data('viewState') !== "open") {
-    $(ele).fadeIn(420);
-    $(ele).data('viewState', "open");
+  // Make sure WebX.Window is available before using it
+  if (typeof WebX.Window === 'function') {
+    // Use the Window component's open method
+    const windowInstance = new WebX.Window();
+    windowInstance.open(ele, opt);
+  } else {
+    // Fallback for when WebX.Window isn't available yet
+    console.warn('WebX.Window not available, using fallback open');
+    if (ele && ele.style) {
+      ele.style.display = 'block';
+    }
   }
 };
 
 WebX.Browser.prototype.toggle = function (ele) {
-  if ($(ele).is(':visible')) {
-    WebX.Browser.close(ele);
-  } else if (!$(ele).is(':visible')) {
-    WebX.Browser.open(ele);
+  // Make sure WebX.Window is available before using it
+  if (typeof WebX.Window === 'function') {
+    // Use the Window component's toggle method
+    const windowInstance = new WebX.Window();
+    windowInstance.toggle(ele);
+  } else {
+    // Fallback for when WebX.Window isn't available yet
+    console.warn('WebX.Window not available, using fallback toggle');
+    if (ele && ele.style) {
+      if (ele.style.display === 'none') {
+        WebX.Browser.open(ele);
+      } else {
+        WebX.Browser.close(ele);
+      }
+    }
   }
 };
 
@@ -938,80 +954,254 @@ WebX.Finder.prototype.create = function () {
 };
 
 WebX.Finder.prototype.maximize = function (ele) {
-  console.log('maximizing finder: ' + ele.id);
-  var width_modifier = 0;
-  var height_modifier = 0;
-  var menubarHeight = Utils.$$('#wxMenubar') ? Utils.getDimensions(Utils.$$('#wxMenubar')).height : 0;
-
-  var Finder_size = Utils.getDimensions(Utils.$$('#webxWrapper'));
-  if (!$(ele).data('sizeState') || $(ele).data('sizeState') !== "max") {
-    var eleSize = Utils.getDimensions(document.getElementById(ele.id));
-    $(ele).data({
-      "originalLeft": $(ele).css("left"),
-      "originalTop": $(ele).css("top"),
-      "originalHeight": eleSize.height,
-      "originalWidth": eleSize.width,
-      "sizeState": "min"
-    });
-  }
-  if ($(ele).data('sizeState') === "min") {
-    $(ele).css({
-      "width": Finder_size.width + "px",
-      "height": (Finder_size.height - menubarHeight) + "px",
-      "top": menubarHeight + "px",
-      "left": width_modifier + "px"
-    });
-    $(ele).find('.wxFinder_iframe').css({
-      "width": "100%",
-      "height": ($(ele).outerHeight(false) - 60 - height_modifier) + "px"
-    });
-    $(ele).data('sizeState', "max");
+  if (typeof WebX.Window === 'function') {
+    // Use the Window component's maximize method
+    const windowInstance = new WebX.Window();
+    windowInstance.maximize(ele);
   } else {
-    $(ele).css({
-      "width": $(ele).data('originalWidth') + "px",
-      "height": $(ele).data('originalHeight') + "px",
-      "top": $(ele).data('originalTop'),
-      "left": $(ele).data('originalLeft')
-    });
-    $(ele).find('.wxFinder_iframe').css({
-      "width": "100%",
-      "height": ($(ele).data('originalHeight') - 60 - (($(ele).data('windowType') === 'finder') ? height_modifier - 2 : height_modifier)) + "px"
-    });
-    $(ele).data('sizeState', "min");
+    // Fallback implementation
+    console.warn('WebX.Window not available, using fallback maximize');
+    const finder = ele || document.querySelector('.wxFinder');
+    if (finder) {
+      if (finder.classList.contains('maximized')) {
+        finder.classList.remove('maximized');
+        finder.style.width = finder.dataset.originalWidth || '800px';
+        finder.style.height = finder.dataset.originalHeight || '500px';
+        finder.style.top = finder.dataset.originalTop || '50px';
+        finder.style.left = finder.dataset.originalLeft || '50px';
+      } else {
+        // Store original dimensions
+        finder.dataset.originalWidth = finder.style.width;
+        finder.dataset.originalHeight = finder.style.height;
+        finder.dataset.originalTop = finder.style.top;
+        finder.dataset.originalLeft = finder.style.left;
+        
+        finder.classList.add('maximized');
+        finder.style.width = '100%';
+        finder.style.height = '100%';
+        finder.style.top = '0';
+        finder.style.left = '0';
+      }
+    }
   }
 };
 
 WebX.Finder.prototype.close = function (ele) {
-  if (!$(ele).data('viewState')) {
-    $(ele).data({
-      "viewState": ""
-    });
-  }
-  if ($(ele).data('viewState') !== "closed") {
-    $(ele).fadeOut(420);
-    $(ele).data('viewState', "closed");
+  if (typeof WebX.Window === 'function') {
+    // Use the Window component's close method
+    const windowInstance = new WebX.Window();
+    windowInstance.close(ele);
+  } else {
+    // Fallback implementation
+    console.warn('WebX.Window not available, using fallback close');
+    const finder = ele || document.querySelector('.wxFinder');
+    if (finder) {
+      finder.style.display = 'none';
+    }
   }
 };
 
 WebX.Finder.prototype.open = function (ele, opt) {
-  if (!$(ele).data('viewState')) {
-    $(ele).data({
-      "viewState": ""
-    });
-  }
-  if ($(ele).data('viewState') !== "open") {
-    $(ele).fadeIn(420);
-    $(ele).data('viewState', "open");
+  if (typeof WebX.Window === 'function') {
+    // Use the Window component's open method
+    const windowInstance = new WebX.Window();
+    windowInstance.open(ele, opt);
+  } else {
+    // Fallback implementation
+    console.warn('WebX.Window not available, using fallback open');
+    const finder = ele || document.querySelector('.wxFinder');
+    if (finder) {
+      finder.style.display = 'block';
+      finder.style.zIndex = Utils.getNextZIndex();
+      
+      if (opt && opt.position) {
+        if (opt.position.top) finder.style.top = opt.position.top + 'px';
+        if (opt.position.left) finder.style.left = opt.position.left + 'px';
+      }
+    }
   }
 };
 
 WebX.Finder.prototype.toggle = function (ele) {
-  if ($(ele).is(':visible')) {
-    WebX.Finder.close(ele);
-  } else if (!$(ele).is(':visible')) {
-    WebX.Finder.open(ele);
+  if (typeof WebX.Window === 'function') {
+    // Use the Window component's toggle method
+    const windowInstance = new WebX.Window();
+    windowInstance.toggle(ele);
+  } else {
+    // Fallback implementation
+    console.warn('WebX.Window not available, using fallback toggle');
+    const finder = ele || document.querySelector('.wxFinder');
+    if (finder) {
+      if (finder.style.display === 'none') {
+        this.open(finder);
+      } else {
+        this.close(finder);
+      }
+    }
   }
 };
 
 // Utility functions
 // Utils is now defined in WebXUtils.js
+
+// Create a lowercase 'window' property for backwards compatibility
+WebX.window = {
+  close: function(ele) {
+    if (typeof WebX.Window === 'function') {
+      const windowInstance = new WebX.Window();
+      windowInstance.close(ele);
+    } else {
+      console.warn('WebX.Window not available, using fallback close');
+      const win = ele || document.querySelector('.wxWindow');
+      if (win) {
+        win.style.display = 'none';
+      }
+    }
+  },
+  open: function(ele, opt) {
+    if (typeof WebX.Window === 'function') {
+      const windowInstance = new WebX.Window();
+      windowInstance.open(ele, opt);
+    } else {
+      console.warn('WebX.Window not available, using fallback open');
+      const win = ele || document.querySelector('.wxWindow');
+      if (win) {
+        win.style.display = 'block';
+        win.style.zIndex = Utils.getNextZIndex();
+        
+        if (opt && opt.position) {
+          if (opt.position.top) win.style.top = opt.position.top + 'px';
+          if (opt.position.left) win.style.left = opt.position.left + 'px';
+        }
+      }
+    }
+  },
+  toggle: function(ele) {
+    if (typeof WebX.Window === 'function') {
+      const windowInstance = new WebX.Window();
+      windowInstance.toggle(ele);
+    } else {
+      console.warn('WebX.Window not available, using fallback toggle');
+      const win = ele || document.querySelector('.wxWindow');
+      if (win) {
+        if (win.style.display === 'none') {
+          this.open(win);
+        } else {
+          this.close(win);
+        }
+      }
+    }
+  },
+  maximize: function(ele) {
+    if (typeof WebX.Window === 'function') {
+      const windowInstance = new WebX.Window();
+      windowInstance.maximize(ele);
+    } else {
+      console.warn('WebX.Window not available, using fallback maximize');
+      const win = ele || document.querySelector('.wxWindow');
+      if (win) {
+        if (win.classList.contains('maximized')) {
+          win.classList.remove('maximized');
+          win.style.width = win.dataset.originalWidth || '800px';
+          win.style.height = win.dataset.originalHeight || '500px';
+          win.style.top = win.dataset.originalTop || '50px';
+          win.style.left = win.dataset.originalLeft || '50px';
+        } else {
+          // Store original dimensions
+          win.dataset.originalWidth = win.style.width;
+          win.dataset.originalHeight = win.style.height;
+          win.dataset.originalTop = win.style.top;
+          win.dataset.originalLeft = win.style.left;
+          
+          win.classList.add('maximized');
+          win.style.width = '100%';
+          win.style.height = '100%';
+          win.style.top = '0';
+          win.style.left = '0';
+        }
+      }
+    }
+  }
+};
+
+// Create namespace for creation functions
+WebX.create = {
+  window: function(type, width, height, id, title, content) {
+    if (typeof WebX.Window === 'function' && WebX.Window.create) {
+      return WebX.Window.create({
+        type: type,
+        width: width,
+        height: height,
+        id: id,
+        title: title,
+        content: content
+      });
+    } else {
+      console.warn('WebX.Window.create not available, using fallback window creation');
+      // Fallback implementation - create a basic window
+      const winId = id || 'wx_window_' + Math.floor(Math.random() * 10000);
+      const windowType = type || 'browser';
+      
+      // Create the window container
+      const win = document.createElement('div');
+      win.id = winId;
+      win.className = 'wxWindow wx' + windowType.charAt(0).toUpperCase() + windowType.slice(1);
+      win.style.width = width + 'px';
+      win.style.height = height + 'px';
+      win.style.position = 'absolute';
+      win.style.top = '50px';
+      win.style.left = '50px';
+      win.style.zIndex = Utils.getNextZIndex();
+      
+      // Create window top (title bar)
+      const winTop = document.createElement('div');
+      winTop.className = 'wxWindow_top';
+      
+      // Add title
+      const winTitle = document.createElement('div');
+      winTitle.className = 'wxWindow_title';
+      winTitle.textContent = title || 'Window';
+      winTop.appendChild(winTitle);
+      
+      // Add window buttons
+      const winButtons = document.createElement('div');
+      winButtons.className = 'wxWindow_buttons';
+      
+      const closeBtn = document.createElement('div');
+      closeBtn.className = 'wxWindow_close';
+      closeBtn.onclick = function() { WebX.window.close(win); };
+      winButtons.appendChild(closeBtn);
+      
+      const maxBtn = document.createElement('div');
+      maxBtn.className = 'wxWindow_maximize';
+      maxBtn.onclick = function() { WebX.window.maximize(win); };
+      winButtons.appendChild(maxBtn);
+      
+      winTop.appendChild(winButtons);
+      win.appendChild(winTop);
+      
+      // Add content
+      const winContent = document.createElement('div');
+      winContent.className = 'wxWindow_content';
+      if (typeof content === 'string') {
+        winContent.innerHTML = content;
+      } else if (content instanceof Element) {
+        winContent.appendChild(content);
+      }
+      win.appendChild(winContent);
+      
+      // Add to DOM
+      document.getElementById('webxWrapper').appendChild(win);
+      
+      // Initialize drag and resize
+      Utils.DragResize.init(win, {
+        handle: winTop,
+        containment: Utils.$$('#webxWrapper'),
+        minWidth: 200,
+        minHeight: 100
+      });
+      
+      return win;
+    }
+  }
+};
