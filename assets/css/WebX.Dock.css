@@ -52,6 +52,25 @@
 	position:relative;
 }
 
+.wxDock_item {
+  user-select: none;
+  -webkit-user-select: none;
+  transition: transform 150ms ease-out;
+  z-index: 1;
+}
+
+.wxDock_item.dragging {
+  cursor: move;
+  pointer-events: auto;
+  touch-action: none;
+  z-index: 1000 !important;
+}
+
+.wxDock_item:not(.dragging) {
+  transform-origin: center;
+  transition: transform 150ms ease-out;
+}
+
 #wxDock_ul li.wxDock_item.right_clicked .dockIcon {
   -webkit-box-shadow: inset 0px 0px 64px #000000;
   -moz-box-shadow: inset 0px 0px 64px #000000;

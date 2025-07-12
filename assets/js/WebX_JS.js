@@ -1,0 +1,1017 @@
+// Helper: safely create an element with optional class and id
+function createEl(tag, options = {}) {
+  const el = document.createElement(tag);
+  if (options.className) el.className = options.className;
+  if (options.id) el.id = options.id;
+  if (options.text) el.textContent = options.text;
+  if (options.html) el.innerHTML = options.html;
+  return el;
+}
+
+// Ensure WebX is defined in the global scope
+window.WebX = {
+  init() {
+    // Create main wrapper first
+    const webx_wrapper = createEl('div', { id: 'webxWrapper' });
+    document.body.appendChild(webx_wrapper);
+    
+    // Create components after wrapper exists
+    this.Browser = new WebX.Browser();
+    this.Clock = new WebX.Clock();
+    this.Finder = new WebX.Finder();
+    this.Dock = new WebX.Dock();
+
+    const wallpaperDiv = createEl('div');
+    wallpaperDiv.innerHTML = '<img id="wallpaper" src="https://unsplash.it/1280/720/?random" alt="" title="" />';
+    webx_wrapper.appendChild(wallpaperDiv);
+
+    const starter = Utils.$$('#starter');
+    if (starter) starter.style.display = 'none';
+
+    WebX.Menubar.init();
+    WebX.Dock.init();
+    WebX.Dashboard.init();
+  },
+  Menubar: {
+    init() {
+      const webx_wrapper = Utils.$$('#webxWrapper');
+      const menubar = createEl('div', { id: 'wxMenubar' });
+      const user_area = createEl('div', { id: 'mb_user_area' });
+      const userNameDiv = createEl('div', { id: 'wx_mb_user_name', text: 'Default User' });
+      const userPicDiv = createEl('div', { id: 'wx_mb_user_pic' });
+      webx_wrapper.appendChild(menubar);
+      menubar.appendChild(user_area);
+      WebX.Clock.create('wx_mb_clock', user_area);
+      user_area.insertBefore(userNameDiv, user_area.firstChild);
+      user_area.insertBefore(userPicDiv, user_area.firstChild);
+      for (const item in webx_data.menubar) {
+        const menubar_ul = createEl('ul', { className: 'menubar_ul', id: 'menubar_ul_' + item });
+        menubar.appendChild(menubar_ul);
+        for (const link in webx_data.menubar[item]) {
+          WebX.Menubar.create_link(item + '_' + link, menubar_ul);
+        }
+      }
+      // Hide all menubar_ul except finder
+      menubar.querySelectorAll('ul.menubar_ul').forEach(ul => {
+        if (ul.id !== 'menubar_ul_finder') ul.style.display = 'none';
+      });
+    },
+    create_link(obj, target) {
+      const names = obj.split('_');
+      const menubar_li = createEl('li', { className: 'mb_item disabled', id: 'mb_' + obj, text: names[1] });
+      menubar_li.addEventListener('click', function (e) {
+        e.preventDefault();
+        this.classList.toggle('disabled');
+        this.classList.toggle('enabled');
+        target.querySelectorAll('li.enabled').forEach(item => {
+          if (item !== menubar_li) {
+            item.classList.toggle('enabled');
+            item.classList.toggle('disabled');
+          }
+        });
+        return false;
+      });
+      menubar_li.addEventListener('mouseover', function (e) {
+        const enabledItems = target.querySelectorAll('li.enabled');
+        if (enabledItems.length === 1 && !this.classList.contains('enabled')) {
+          enabledItems.forEach(item => {
+            item.classList.toggle('enabled');
+            item.classList.toggle('disabled');
+          });
+          this.classList.toggle('enabled');
+          this.classList.toggle('disabled');
+        }
+        return false;
+      });
+      target.appendChild(menubar_li);
+      WebX.Menubar.create_panel(obj, webx_data.menubar[names[0]][names[1]], menubar_li);
+    },
+    create_panel(panel, contents, target) {
+      const panel_name = panel + '_panel';
+      const mb_panel = createEl('div', { id: panel_name, className: 'mbWindow' });
+      target.appendChild(mb_panel);
+      const mb_link_ul = createEl('ul');
+      mb_panel.appendChild(mb_link_ul);
+      for (const panel_link in contents) {
+        WebX.Menubar.create_panel_link(panel_link, contents[panel_link], mb_link_ul);
+      }
+    },
+    create_sub_panel(panel, contents, target) {
+      const panel_name = panel + '_sub_panel';
+      const mb_panel = createEl('div', { id: panel_name, className: 'mbSubWindow' });
+      target.appendChild(mb_panel);
+      const mb_link_ul = createEl('ul');
+      mb_panel.appendChild(mb_link_ul);
+      for (const panel_link in contents) {
+        WebX.Menubar.create_panel_link(panel_link, contents[panel_link], mb_link_ul);
+      }
+    },
+    create_panel_link(link_name, link_funcs, target) {
+      const mb_link_li = createEl('li', { text: link_name });
+      target.appendChild(mb_link_li);
+      if (link_funcs.click !== 'false') {
+        const func = new Function('return ' + link_funcs.click)();
+        mb_link_li.addEventListener('click', function (e) {
+          e.preventDefault();
+          func();
+          return false;
+        });
+      } else {
+        mb_link_li.addEventListener('click', function (e) {
+          e.preventDefault();
+          return false;
+        });
+      }
+      if (link_funcs.list) {
+        WebX.Menubar.create_sub_panel(link_name, link_funcs.list, mb_link_li);
+      }
+    },
+    switch_to(menubar) {
+      document.querySelectorAll('.menubar_ul').forEach(ul => {
+        if (ul.id !== 'menubar_ul_' + menubar) ul.style.display = 'none';
+        else ul.style.display = '';
+      });
+    }
+  },
+  Dashboard: {
+    init: function () {
+      const dashboardPanel = createEl('div', { id: 'dashboardPanel' });
+      document.body.appendChild(dashboardPanel);
+      dashboardPanel.dataset.dashboardStatus = '0';
+      dashboardPanel.dataset.widgetDrawerStatus = '0';
+
+      var dbOverlay = $('<div>', {
+        id: "dbOverlay",
+        click: function () {
+          WebX.Dashboard.start();
+          return false;
+        }
+      }).appendTo('div#webxWrapper');
+
+      $('<div>', {
+        id: "dbDrawerButton",
+        click: function () {
+          WebX.Dashboard.drawer();
+          return false;
+        }
+      }).appendTo(dbOverlay);
+      
+      $('<div>', {
+        id: "dbManageButton"
+      }).appendTo(dbOverlay);
+    },
+
+    start: function () {
+      const dashboardPanel = document.getElementById('dashboardPanel');
+      const dbOverlay = document.getElementById('dbOverlay');
+      const dbManageButton = document.getElementById('dbManageButton');
+      const dbDrawerButton = document.getElementById('dbDrawerButton');
+      const webxWrapper = document.getElementById('webxWrapper');
+
+      if (dashboardPanel.dataset.dashboardStatus === '0') {
+        dbManageButton.style.display = 'none';
+        $(dbOverlay).fadeToggle(420);
+        dashboardPanel.dataset.dashboardStatus = '1';
+      } else if (dashboardPanel.dataset.dashboardStatus === '1' && dashboardPanel.dataset.widgetDrawerStatus === '1') {
+        $(webxWrapper).add(dbOverlay).animate({
+          marginTop: '0px'
+        }, {
+          queue: false,
+          duration: 420
+        });
+        $(dbDrawerButton).animate({
+          rotate: '+=135deg'
+        }, {
+          queue: false,
+          duration: 420
+        });
+        $(dbManageButton).fadeToggle(420);
+        $(dbOverlay).fadeOut(420);
+        dashboardPanel.dataset.widgetDrawerStatus = '0';
+        dashboardPanel.dataset.dashboardStatus = '0';
+      } else if (dashboardPanel.dataset.dashboardStatus === '1') {
+        $(dbOverlay).fadeOut(420);
+        dashboardPanel.dataset.dashboardStatus = '0';
+      }
+    },
+
+    drawer: function () {
+      const dashboardPanel = document.getElementById('dashboardPanel');
+      const dbOverlay = document.getElementById('dbOverlay');
+      const dbManageButton = document.getElementById('dbManageButton');
+      const dbDrawerButton = document.getElementById('dbDrawerButton');
+      const webxWrapper = document.getElementById('webxWrapper');
+
+      if (dashboardPanel.dataset.widgetDrawerStatus === '0') {
+        $(webxWrapper).add(dbOverlay).animate({
+          marginTop: '-118px'
+        }, {
+          duration: 420,
+          queue: false
+        });
+        $(dbDrawerButton).animate({
+          rotate: '-=135deg'
+        }, {
+          queue: false,
+          duration: 420
+        });
+        $(dbManageButton).fadeToggle(420);
+        dashboardPanel.dataset.widgetDrawerStatus = '1';
+      } else if (dashboardPanel.dataset.widgetDrawerStatus === '1') {
+        $(webxWrapper).add(dbOverlay).animate({
+          marginTop: '0px'
+        }, {
+          duration: 420,
+          queue: false
+        });
+        $(dbDrawerButton).animate({
+          rotate: '+=135deg'
+        }, {
+          queue: false,
+          duration: 420
+        });
+        $(dbManageButton).fadeToggle(420);
+        dashboardPanel.dataset.widgetDrawerStatus = '0';
+      }
+    }
+  },
+  Data: {
+    windows: {
+      finder: [],
+      browser: []
+    },
+    menubars: []
+  }
+};
+
+WebX.Clock = function () {};
+WebX.Clock.prototype.create = function (ele_id, target) {
+  var clock_div = document.createElement('div');
+  clock_div.id = ele_id;
+  target.appendChild(clock_div);
+  WebX.Clock.update(ele_id);
+};
+
+WebX.Clock.prototype.update = function (ele_id) {
+  var time_ele = document.getElementById(ele_id);
+  var now = new Date();
+  var hours = now.getHours();
+  var mins = now.getMinutes().toString().padStart(2, '0');
+  var day = now.getDay();
+  var theDay = now.getDate();
+  var month = now.getMonth();
+  var year = now.getFullYear();
+  var dayList = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+  var monthList = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  var AorP = hours >= 12 ? "PM" : "AM";
+  hours = hours % 12 || 12;
+  time_ele.innerHTML = `${dayList[day]},&nbsp;${monthList[month]}&nbsp;${theDay},&nbsp;${year}&nbsp;&nbsp;|&nbsp;&nbsp;${hours}:${mins}&nbsp;${AorP}`;
+  setTimeout(function () {
+    WebX.Clock.update(ele_id);
+  }, 1000);
+};
+
+
+
+WebX.Dock = function () {};
+WebX.Dock.prototype.init = function () {
+  const wxWrapper = document.getElementById('webxWrapper');
+  const theDock = createEl('div', { id: 'wxDock' });
+  const theDock_wrapper = createEl('div', { id: 'wxDock_wrapper' });
+  wxWrapper.appendChild(theDock);
+  theDock.appendChild(theDock_wrapper);
+
+  const dock_left = createEl('div', { id: 'wxDock_left' });
+  theDock_wrapper.appendChild(dock_left);
+  const dock_content = createEl('ul', { id: 'wxDock_ul' });
+  theDock_wrapper.appendChild(dock_content);
+  const dock_right = createEl('div', { id: 'wxDock_right' });
+  theDock_wrapper.appendChild(dock_right);
+
+  for (const item in webx_data.dock) {
+    if (item !== 'separator') {
+      WebX.Dock.create_icon(webx_data.dock[item]);
+    } else {
+      WebX.Dock.create_separator();
+    }
+  }
+};
+
+WebX.Dock.prototype.create_icon = function (item, insert, type = null, cb = null) {
+  const dock_item = createEl('li', {
+    className: 'wxDock_item',
+    id: 'wxDock_item_' + item.name.replace(/ /g, '_'),
+  });
+  if (item.name === 'Trash') {
+    dock_item.classList.add('wxDock_no_sort');
+  }
+  
+  const icon_div = createEl('div', {
+    className: type ? 'iIcon dockIcon dock_' + type : 'iIcon dockIcon',
+    id: 'dock_' + item.name,
+  });
+  dock_item.appendChild(icon_div);
+  
+  // Special handling for Dashboard icon
+  if (item.name === 'Dashboard') {
+    icon_div.addEventListener('click', function(e) {
+      e.preventDefault();
+      WebX.Dashboard.start();
+      return false;
+    });
+  } else if (item.click !== 'false') {
+    const func = eval('(' + item.click + ')');
+    const right_func = eval('(' + item.right_click + ')');
+    icon_div.addEventListener('click', function (e) {
+      if (dock_item.classList.contains('right_clicked')) {
+        dock_item.classList.remove('right_clicked');
+        document.querySelectorAll('li.wxDock_item').forEach(el => el.classList.remove('no_hover'));
+      } else {
+        func();
+      }
+      e.preventDefault();
+      return false;
+    });
+  }
+
+  if (insert) {
+    dock_item.id = item.id;
+    const div_id = 'dock_' + item.name.replace(/[ '\u2019\-,.]/g, '_');
+    icon_div.id = div_id;
+    const trashItem = Utils.$$('#wxDock_item_Trash');
+    if (trashItem && trashItem.parentNode) {
+      trashItem.parentNode.insertBefore(dock_item, trashItem);
+    }
+  } else {
+    const dock_ul = Utils.$$('#wxDock_ul');
+    dock_ul.appendChild(dock_item);
+  }
+
+  const icon_gloss = createEl('div', { className: 'iGloss' });
+  icon_div.appendChild(icon_gloss);
+  WebX.Dock.create_icon_tip(dock_item, item.name);
+  WebX.Dock.create_icon_context_menu(dock_item, item.right_click_menu);
+
+  if (cb) {
+    cb();
+  }
+  WebX.Dock.center();
+};
+
+WebX.Dock.prototype.create_icon_tip = function (icon, text) {
+  const tip_id = 'wxDock_tip_' + text.replace(/[ '\u2019\-,.]/g, '_');
+  const theTip = createEl('div', { className: 'wxTip', id: tip_id });
+  const tipText = createEl('div', { className: 'wxTipText', html: text.replace(/ /g, '&nbsp;') });
+  theTip.appendChild(tipText);
+  icon.appendChild(theTip);
+  const tipPos = document.getElementById(tip_id);
+  const tipOff = Utils.getDimensions(tipPos).width / 2;
+  tipPos.style.marginLeft = '-' + tipOff + 'px';
+};
+
+WebX.Dock.prototype.create_minimized_icon = function (name, item, type, cb = null) {
+  const item_name = String(name);
+  const item_id = 'wxDock_item_' + String(item);
+  const minimized_data = {
+    name: item_name,
+    id: item_id,
+    click: `function(){ Utils.$$('#${item}').style.display = 'block'; Utils.$$('#${item_id}').remove(); WebX.Dock.center(); }`,
+    right_click: `function(){ console.log('Minimized item right click'); }`,
+    right_click_menu: [
+      {
+        item: 'Open ' + item_name,
+        click: `function(){ Utils.$$('#${item}').style.display = 'block'; Utils.$$('#${item_id}').remove(); WebX.Dock.center(); }`,
+      },
+    ],
+  };
+  WebX.Dock.create_icon(minimized_data, true, type, cb);
+};
+
+WebX.Dock.prototype.create_separator = function () {
+  const dock_item = createEl('li', { className: 'wxDock_separator wxDock_no_sort' });
+  const separator_div = createEl('div', { className: 'dock_separator' });
+  dock_item.appendChild(separator_div);
+  const dock_ul = Utils.$$('#wxDock_ul');
+  dock_ul.appendChild(dock_item);
+  WebX.Dock.center();
+};
+
+WebX.Dock.prototype.create_icon_context_menu = function (icon, items) {
+  const context_menu = createEl('div', { className: 'dock_context' });
+  const context_menu_ul = createEl('ul');
+  context_menu.appendChild(context_menu_ul);
+  for (const item of items) {
+    const context_menu_item = WebX.Dock.create_icon_context_item(item);
+    context_menu_ul.appendChild(context_menu_item);
+  }
+  icon.appendChild(context_menu);
+  // Positioning logic for context menu
+  context_menu.style.top = '-' + (context_menu.offsetHeight + 22) + 'px';
+};
+
+WebX.Dock.prototype.create_icon_context_item = function (item) {
+  const func = eval('(' + item.click + ')');
+  const li = createEl('li');
+  li.innerHTML = item.item.replace(/ /g, '&nbsp;');
+  li.addEventListener('click', function (e) {
+    func();
+    e.preventDefault();
+    return false;
+  });
+  return li;
+};
+
+WebX.Dock.prototype.center = function () {
+  const wxDock = Utils.$$('#wxDock');
+  const dockWidth = Utils.getDimensions(wxDock).width;
+  if (wxDock) {
+    wxDock.style.marginLeft = -(dockWidth / 2) + 'px';
+  }
+};
+
+WebX.Dock.prototype.hide = function () {
+  const wxDock = Utils.$$('#wxDock');
+  if (wxDock) {
+    wxDock.style.marginBottom = '-58px';
+    wxDock.dataset.state = 'closed';
+  }
+};
+
+WebX.Dock.prototype.show = function () {
+  const wxDock = Utils.$$('#wxDock');
+  if (wxDock) {
+    wxDock.style.marginBottom = '0px';
+    wxDock.dataset.state = 'open';
+  }
+};
+
+WebX.Dock.prototype.toggle = function () {
+  const wxDock = Utils.$$('#wxDock');
+  if (wxDock && wxDock.style.marginBottom === '0px') {
+    WebX.Dock.hide();
+  } else {
+    WebX.Dock.show();
+  }
+};
+
+WebX.Browser = function () {};
+WebX.Browser.prototype.create = function (site_url) {
+  WebX.Menubar.switch_to('browser');
+  const finder = Utils.$$('#wxFinder');
+  var this_id = WebX.Data.windows['browser'].length;
+  const browser = createEl('div', {
+    className: 'wx_window wxBrowser',
+    id: 'wxBrowser_' + this_id
+  });
+  Utils.$$('#webxWrapper').appendChild(browser);
+  
+  WebX.Data.windows['browser'].push("wxBrowser_" + this_id);
+  
+  const browser_top = createEl('div', {
+    className: "wxBrowser_top"
+  });
+  browser.appendChild(browser_top);
+
+  const browser_top_perms = createEl('div', {
+    className: "wxBrowser_top_permanents"
+  });
+  browser_top.appendChild(browser_top_perms);
+
+  const browser_title = createEl('div', {
+    className: "wxBrowser_title",
+    text: "Browse"
+  });
+  browser_top_perms.appendChild(browser_title);
+
+  const browser_top_button_box = createEl('div', {
+    className: "wxBrowser_buttons"
+  });
+  browser_top_perms.appendChild(browser_top_button_box);
+
+  const br_close_btn = createEl('div', {
+    className: "button close"
+  });
+  browser_top_button_box.appendChild(br_close_btn);
+  br_close_btn.addEventListener('click', function () {
+    //debug.log('close button clicked');
+    console.log("browser close button clicked :" + browser.id);
+    WebX.Browser.toggle(browser);
+  });
+
+  const br_min_button = createEl('div', {
+    className: "button minimize"
+  });
+  browser_top_button_box.appendChild(br_min_button);
+  // Minimize button logic
+   
+  br_min_button.addEventListener('click', function(){
+    //debug.log('minimize button clicked');
+    //console.log(finder);
+
+    WebX.Dock.create_minimized_icon(browser.id, browser.id, 'Browser', function() {
+      const dockIcon = Utils.$$('#dock_' + browser.id);
+      if (!dockIcon) return;
+    
+      const dockRect = dockIcon.getBoundingClientRect();
+      const targetPoint = {
+        x: dockRect.left + (dockRect.width / 2),
+        y: dockRect.top + (dockRect.height / 2)
+      };
+      setTimeout(() => {
+
+        Animation.genie(browser, {
+          duration: 700,
+          target: targetPoint,
+          onComplete: () => {
+            browser.style.display = 'none';
+          }
+        });
+
+      }, 100);
+    });
+  });
+
+  $('<div/>', {
+    className: "button maximize"
+  }).appendTo(browser_top_button_box).bind('click', function(){
+    debug.log('maximize button clicked');
+    WebX.Browser.maximize(browser);
+  });
+
+  var browser_nav = $('<div/>', {
+    className: "wxBrowser_nav"
+  }).appendTo(browser_top);
+  // Forward Button
+  $('<div/>',{
+    className: "wxBrowser_button_forward"
+  }).appendTo(browser_nav).bind('click', function(){
+    debug.log('forward button clicked');
+    return false;
+  });
+  // Back Button
+  $('<div/>',{
+    className: "wxBrowser_button_back"
+  }).appendTo(browser_nav).bind('click', function(){
+    debug.log('back button clicked');
+    return false;
+  });
+  // Home Button
+  $('<div/>',{
+    className: "wxBrowser_button_home"
+  }).appendTo(browser_nav).bind('click', function(){
+    debug.log('home button clicked');
+    return false;
+  });
+  // Url Form
+  var browser_form = $('<form/>',{
+    className: "wxBrowser_url_field browser_resize",
+    id: "wxBrowser_form_" + this_id
+  }).appendTo(browser_nav);
+  // Loader Div
+  var loader_div = $('<div/>',{
+    className: "wxBrowser_loader"
+  }).appendTo(browser_form).hide();
+  // Loader Image
+  $('<img src="assets/imgs/loaders/browser_loader.gif" />').appendTo(loader_div);
+  // Url Form input
+  var browser_input = $('<input type="text">').attr({
+    "value" : (!site_url) ? "http://google.com" : site_url,
+    "class" : "browser_resize"
+  }).appendTo(browser_form);
+  // Refresh Button
+  $('<div/>',{
+    className: "wxBrowser_button_refresh"
+  }).appendTo(browser_nav).bind('click', function(){
+    debug.log('refresh button clicked');
+    return false;
+  });
+  // Stop Button
+  $('<div/>',{
+    className: "wxBrowser_button_stop"
+  }).appendTo(browser_nav).bind('click', function(){
+    debug.log('stop button clicked');
+    return false;
+  });
+  // browser tabs
+  var browser_tabs_wrapper = $('<div/>', {
+    className: "wxBrowser_tabs_wrapper"
+  }).appendTo(browser_top);
+  // Iframe
+  var browser_iframe = $('<iframe/>', {
+    className: "wxBrowser_iframe browser_resize",
+    id: "wxBrowser_iframe_" + this_id
+  }).attr({
+    "src" : (!site_url) ? "http://google.com" : site_url
+  }).data({
+    "history": ["http://google.com"],
+    "home": "http://webx.ipwn.me"
+  }).appendTo(browser);
+  
+  browser_form.bind('submit', function(e){
+    e.preventDefault();
+    e.stopPropagation();
+    var wxIframe_source = browser_input.val();
+    if(isUrl(wxIframe_source)){
+      var history = browser_iframe.data('history');
+      history[history.length] = wxIframe_source;
+      loader_div.show();
+      browser_iframe.attr({'src': wxIframe_source }).data({ "history": history }).bind('load', function(){ loader_div.hide(); });
+      $.ajax({
+        type: "POST",
+        url: "browser/get_page_title",
+        data: "url="+wxIframe_source,
+        success: function(data) {
+          browser_title.html(data);
+        }
+      });
+    } else {
+      if(wxIframe_source.match(' ')) {
+        loader_div.show();
+        browser_iframe.attr({'src': 'https://www.google.com/search?hl=en&q='+ wxIframe_source.replace(' ','+') +'&btnI=I%27m+Feeling+Lucky'}).bind('load', function(){ loader_div.hide(); });
+        browser_input.attr({'value': browser_iframe.attr('src')});
+      } else {
+        var history = browser_iframe.data('history');
+        history[history.length] = browser_iframe.data('home');
+        loader_div.show();
+        browser_iframe.attr({'src': browser_iframe.data('home') }).data({ "history": history }).bind('load', function(){ loader_div.hide(); });
+        browser_input.attr({'value': browser_iframe.attr('src')});
+        debug.log(history);
+      }
+    }
+  });
+
+  Utils.DragResize.init(browser, {
+    handle: browser_top,
+    containment: Utils.$$('#webxWrapper'),
+    minWidth: 500,
+    minHeight: 135,
+    alsoResize: '.browser_resize',
+    contentOffset: 60,
+    onDragStart: () => {
+      WebX.Menubar.switch_to('browser');
+      browser.style.zIndex = Utils.getNextZIndex();
+    },
+  }).bringToFront();
+  
+  return browser;
+};
+
+WebX.Browser.prototype.maximize = function (ele) {
+  var width_modifier = 0;
+  var height_modifier = 0;
+  var browser_size = Utils.getDimensions(document.getElementsByTagName('body')[0]);
+  if (!$(ele).data('sizeState') || $(ele).data('sizeState') !== "max") {
+    var eleSize = getDimensions($(ele));
+    $(ele).data({
+      "originalLeft": $(ele).css("left"),
+      "originalTop": $(ele).css("top"),
+      "originalHeight": eleSize.height,
+      "originalWidth": eleSize.width,
+      "sizeState": "min"
+    });
+  }
+  if ($(ele).data('sizeState') === "min") {
+    $(ele).css({
+      "width": browser_size.width + "px",
+      "height": browser_size.height - $('#menubar').outerHeight(true) + "px",
+      "top": $('#menubar').outerHeight(true) + "px",
+      "left": width_modifier + "px"
+    });
+    $(ele).find('.wxBrowser_iframe').css({
+      "width": "100%",
+      "height": ($(ele).outerHeight(false) - 60 - height_modifier) + "px"
+    });
+    $(ele).data('sizeState', "max");
+  } else {
+    $(ele).css({
+      "width": $(ele).data('originalWidth') + "px",
+      "height": $(ele).data('originalHeight') + "px",
+      "top": $(ele).data('originalTop'),
+      "left": $(ele).data('originalLeft')
+    });
+    $(ele).find('.wxBrowser_iframe').css({
+      "width": "100%",
+      "height": ($(ele).data('originalHeight') - 60 - (($(ele).data('windowType') === 'finder') ? height_modifier - 2 : height_modifier)) + "px"
+    });
+    $(ele).data('sizeState', "min");
+  }
+};
+
+WebX.Browser.prototype.close = function (ele) {
+  if (!$(ele).data('viewState')) {
+    $(ele).data({
+      "viewState": ""
+    });
+  }
+  if ($(ele).data('viewState') !== "closed") {
+    $(ele).fadeOut(420);
+    $(ele).data('viewState', "closed");
+  }
+};
+
+WebX.Browser.prototype.open = function (ele, opt) {
+  if (!$(ele).data('viewState')) {
+    $(ele).data({
+      "viewState": ""
+    });
+  }
+  if ($(ele).data('viewState') !== "open") {
+    $(ele).fadeIn(420);
+    $(ele).data('viewState', "open");
+  }
+};
+
+WebX.Browser.prototype.toggle = function (ele) {
+  if ($(ele).is(':visible')) {
+    WebX.Browser.close(ele);
+  } else if (!$(ele).is(':visible')) {
+    WebX.Browser.open(ele);
+  }
+};
+
+WebX.Finder = function () {};
+WebX.Finder.prototype.create = function () {
+  WebX.Menubar.switch_to('finder');
+  const this_id = WebX.Data.windows['finder'].length;
+  const finder = createEl('div', {
+    className: "wx_window wxFinder",
+    id: "wxFinder_" + this_id
+  });
+  Utils.$$('#webxWrapper').appendChild(finder);
+  
+  WebX.Data.windows['finder'].push("wxFinder_" + this_id);
+  
+  const finder_top = createEl('div', { className: "wxFinder_top" });
+  finder.appendChild(finder_top);
+  
+  const finder_top_perms = createEl('div', { className: "wxFinder_top_permanents" });
+  finder_top.appendChild(finder_top_perms);
+  
+  const finder_top_button_box = createEl('div', { className: "wxFinder_buttons" });
+  finder_top_perms.appendChild(finder_top_button_box);
+  
+  const closeButton = createEl('div', { className: "button close" });
+  finder_top_button_box.appendChild(closeButton);
+  closeButton.addEventListener('click', function(){
+    debug.log('close button clicked');
+    WebX.Finder.toggle(finder);
+  });
+  
+  const minimizeButton = createEl('div', { className: "button minimize" });
+  finder_top_button_box.appendChild(minimizeButton);
+  
+  minimizeButton.addEventListener('click', function(){
+    //debug.log('minimize button clicked');
+    //console.log(finder);
+    WebX.Dock.create_minimized_icon(finder.id, finder.id, 'Finder', function() {
+      const dockIcon = Utils.$$('#dock_' + finder.id);
+      if (!dockIcon) return;
+    
+      const dockRect = dockIcon.getBoundingClientRect();
+      const targetPoint = {
+        x: dockRect.left + (dockRect.width / 2),
+        y: dockRect.top + (dockRect.height / 2)
+      };
+      setTimeout(() => {
+
+        Animation.genie(finder, {
+          duration: 700,
+          target: targetPoint,
+          onComplete: () => {
+            finder.style.display = 'none';
+          }
+        });
+
+      }, 100);
+    });
+  });
+  
+  const maximizeButton = createEl('div', { className: "button maximize" });
+  finder_top_button_box.appendChild(maximizeButton);
+  maximizeButton.addEventListener('click', function(){
+    debug.log('maximize button clicked');
+    WebX.Finder.maximize(finder);
+  });
+
+  const finder_title = createEl('div', { className: "wxFinder_title", text: "Finder" });
+  finder_top_perms.appendChild(finder_title);
+  
+  const finder_nav = createEl('div', { className: "wxFinder_nav" });
+  finder_top.appendChild(finder_nav);
+  
+  // Back Button
+  const backButton = createEl('div', { className: "wxFinder_button_back" });
+  finder_nav.appendChild(backButton);
+  backButton.addEventListener('click', function(){
+    debug.log('back button clicked');
+    return false;
+  });
+  backButton.addEventListener('mousedown', function(){
+    this.classList.add('finder_pressed');
+  });
+  backButton.addEventListener('mouseup', function(){
+    this.classList.remove('finder_pressed');
+  });
+  
+  // Forward Button
+  const forwardButton = createEl('div', { className: "wxFinder_button_forward" });
+  finder_nav.appendChild(forwardButton);
+  forwardButton.addEventListener('click', function(){
+    debug.log('forward button clicked');
+    return false;
+  });
+  forwardButton.addEventListener('mousedown', function(){
+    this.classList.add('finder_pressed');
+  });
+  forwardButton.addEventListener('mouseup', function(){
+    this.classList.remove('finder_pressed');
+  });
+  
+  // Views
+  // Icon View
+  const iconViewButton = createEl('div', { className: "wxFinder_button_icon_view" });
+  finder_nav.appendChild(iconViewButton);
+  iconViewButton.addEventListener('click', function(){
+    debug.log('icon view button clicked');
+    return false;
+  });
+  iconViewButton.addEventListener('mousedown', function(){
+    this.classList.add('finder_pressed');
+  });
+  iconViewButton.addEventListener('mouseup', function(){
+    this.classList.remove('finder_pressed');
+  });
+  
+  // List View
+  const listViewButton = createEl('div', { className: "wxFinder_button_list_view" });
+  finder_nav.appendChild(listViewButton);
+  listViewButton.addEventListener('click', function(){
+    debug.log('list view button clicked');
+    return false;
+  });
+  listViewButton.addEventListener('mousedown', function(){
+    this.classList.add('finder_pressed');
+  });
+  listViewButton.addEventListener('mouseup', function(){
+    this.classList.remove('finder_pressed');
+  });
+  
+  // Column View
+  const columnViewButton = createEl('div', { className: "wxFinder_button_column_view" });
+  finder_nav.appendChild(columnViewButton);
+  columnViewButton.addEventListener('click', function(){
+    debug.log('column view button clicked');
+    return false;
+  });
+  columnViewButton.addEventListener('mousedown', function(){
+    this.classList.add('finder_pressed');
+  });
+  columnViewButton.addEventListener('mouseup', function(){
+    this.classList.remove('finder_pressed');
+  });
+  
+  // Coverflow View
+  const coverflowViewButton = createEl('div', { className: "wxFinder_button_coverflow_view" });
+  finder_nav.appendChild(coverflowViewButton);
+  coverflowViewButton.addEventListener('click', function(){
+    debug.log('coverflow view button clicked');
+    return false;
+  });
+  coverflowViewButton.addEventListener('mousedown', function(){
+    this.classList.add('finder_pressed');
+  });
+  coverflowViewButton.addEventListener('mouseup', function(){
+    this.classList.remove('finder_pressed');
+  });
+  
+  // Quicklook Button
+  const quicklookButton = createEl('div', { className: "wxFinder_button_quicklook" });
+  finder_nav.appendChild(quicklookButton);
+  quicklookButton.addEventListener('click', function(){
+    debug.log('quicklook button clicked');
+    return false;
+  });
+  quicklookButton.addEventListener('mousedown', function(){
+    this.classList.add('finder_pressed');
+  });
+  quicklookButton.addEventListener('mouseup', function(){
+    this.classList.remove('finder_pressed');
+  });
+  
+  // Content
+  const finder_content = createEl('div', {
+    className: "wxFinder_content finder_resize",
+    id: "wxFinder_content_" + this_id
+  });
+  finder.appendChild(finder_content);
+  
+  const finder_sidebar = createEl('div', {
+    className: "wxFinder_sidebar finder_resize",
+    id: "wxFinder_sidebar_" + this_id
+  });
+  finder.appendChild(finder_sidebar);
+  
+  // Footer
+  const finder_footer = createEl('div', { className: "wxFinder_footer" });
+  finder.appendChild(finder_footer);
+
+  finder_content.style.height = (finder.offsetHeight - (finder_top.offsetHeight + finder_footer.offsetHeight + 2)) + "px";
+  
+  finder_sidebar.style.height = (finder.offsetHeight - (finder_top.offsetHeight + finder_footer.offsetHeight + 2)) + "px";
+  finder_sidebar.style.top = finder_top.offsetHeight + "px";
+  
+  // Initialize drag and resize
+  Utils.DragResize.init(finder, {
+    handle: finder_top,
+    containment: Utils.$$('#webxWrapper'),
+    minWidth: 500,
+    minHeight: 135,
+    alsoResize: '.finder_resize',
+    contentOffset: 60,
+    onDragStart: () => {
+      WebX.Menubar.switch_to('finder');
+      finder.style.zIndex = Utils.getNextZIndex();
+    },
+  }).bringToFront();
+
+  return finder;
+};
+
+WebX.Finder.prototype.maximize = function (ele) {
+  console.log('maximizing finder: ' + ele.id);
+  var width_modifier = 0;
+  var height_modifier = 0;
+  var menubarHeight = Utils.$$('#wxMenubar') ? Utils.getDimensions(Utils.$$('#wxMenubar')).height : 0;
+
+  var Finder_size = Utils.getDimensions(Utils.$$('#webxWrapper'));
+  if (!$(ele).data('sizeState') || $(ele).data('sizeState') !== "max") {
+    var eleSize = Utils.getDimensions(document.getElementById(ele.id));
+    $(ele).data({
+      "originalLeft": $(ele).css("left"),
+      "originalTop": $(ele).css("top"),
+      "originalHeight": eleSize.height,
+      "originalWidth": eleSize.width,
+      "sizeState": "min"
+    });
+  }
+  if ($(ele).data('sizeState') === "min") {
+    $(ele).css({
+      "width": Finder_size.width + "px",
+      "height": (Finder_size.height - menubarHeight) + "px",
+      "top": menubarHeight + "px",
+      "left": width_modifier + "px"
+    });
+    $(ele).find('.wxFinder_iframe').css({
+      "width": "100%",
+      "height": ($(ele).outerHeight(false) - 60 - height_modifier) + "px"
+    });
+    $(ele).data('sizeState', "max");
+  } else {
+    $(ele).css({
+      "width": $(ele).data('originalWidth') + "px",
+      "height": $(ele).data('originalHeight') + "px",
+      "top": $(ele).data('originalTop'),
+      "left": $(ele).data('originalLeft')
+    });
+    $(ele).find('.wxFinder_iframe').css({
+      "width": "100%",
+      "height": ($(ele).data('originalHeight') - 60 - (($(ele).data('windowType') === 'finder') ? height_modifier - 2 : height_modifier)) + "px"
+    });
+    $(ele).data('sizeState', "min");
+  }
+};
+
+WebX.Finder.prototype.close = function (ele) {
+  if (!$(ele).data('viewState')) {
+    $(ele).data({
+      "viewState": ""
+    });
+  }
+  if ($(ele).data('viewState') !== "closed") {
+    $(ele).fadeOut(420);
+    $(ele).data('viewState', "closed");
+  }
+};
+
+WebX.Finder.prototype.open = function (ele, opt) {
+  if (!$(ele).data('viewState')) {
+    $(ele).data({
+      "viewState": ""
+    });
+  }
+  if ($(ele).data('viewState') !== "open") {
+    $(ele).fadeIn(420);
+    $(ele).data('viewState', "open");
+  }
+};
+
+WebX.Finder.prototype.toggle = function (ele) {
+  if ($(ele).is(':visible')) {
+    WebX.Finder.close(ele);
+  } else if (!$(ele).is(':visible')) {
+    WebX.Finder.open(ele);
+  }
+};
+
+// Utility functions
+// Utils is now defined in WebXUtils.js

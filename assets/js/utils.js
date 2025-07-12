@@ -1,30 +1,65 @@
-function getDimensions(ele) {
+function getDimensions(ele, data = {}, callback = null) {
   var style = window.getComputedStyle(ele);
   var display = style.display;
 
-  // All *Width and *Height properties give 0 on elements with display none,
-  // so enable the element temporarily
-  var originalVisibility = ele.style.visibility;
-  var originalDisplay = ele.style.display;
-  var originalPosition = ele.style.position;
+  // Store original state
+  var originalState = {
+    visibility: ele.style.visibility,
+    display: ele.style.display,
+    position: ele.style.position,
+    width: ele.style.width,
+    height: ele.style.height,
+    opacity: ele.style.opacity,
+    transform: ele.style.transform,
+    transition: ele.style.transition
+  };
 
-  ele.style.visibility = 'hidden';
-  ele.style.display = 'block';
-  ele.style.position = 'absolute';
+  // Apply temporary styles for measurement
+  ele.style.visibility = data.visibility || 'hidden';
+  ele.style.display = data.display || 'block';
+  ele.style.position = data.position || 'absolute';
+  
+  if (data.transition) {
+    ele.style.transition = data.transition;
+  }
 
-  // Use offsetWidth/offsetHeight for visible elements
-  var newWidth = ele.offsetWidth;
-  var newHeight = ele.offsetHeight;
+  // Handle transforms
+  if (data.rotate) {
+    const currentRotation = ele.style.transform ? 
+      parseInt(ele.style.transform.match(/-?\d+/) || 0) : 0;
+    ele.style.transform = `rotate(${currentRotation + data.rotate}deg)`;
+  }
 
-  // Restore original styles
-  ele.style.visibility = originalVisibility;
-  ele.style.display = originalDisplay;
-  ele.style.position = originalPosition;
+  // Handle opacity
+  if (typeof data.opacity !== 'undefined') {
+    ele.style.opacity = data.opacity;
+  }
 
-  return {
+  // Get dimensions
+  var newWidth = data.width || ele.offsetWidth;
+  var newHeight = data.height || ele.offsetHeight;
+
+  // Apply any permanent style changes if specified
+  if (!data.temporary) {
+    // Keep the new styles
+    return { width: newWidth, height: newHeight };
+  }
+
+  // Restore original styles if temporary
+  Object.keys(originalState).forEach(key => {
+    ele.style[key] = originalState[key];
+  });
+
+  const dimensions = {
     width: newWidth,
     height: newHeight
   };
+  
+  if (callback && typeof callback === 'function') {
+    callback(dimensions);
+  }
+  
+  return dimensions;
 }
 
 function getComputedStyleValue(element, style) {

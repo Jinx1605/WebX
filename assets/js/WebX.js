@@ -163,106 +163,116 @@ var WebX = {
   },
   Dashboard: {
     init: function () {
-      $('<div>', {
-        id: "dashboardPanel"
-      }).data({
-        "dashboard_status": 0,
-        "widget_drawer_status": 0
-      }).appendTo(document.getElementsByTagName('body')[0]);
+      const dashboardPanel = document.createElement('div');
+      dashboardPanel.id = 'dashboardPanel';
+      dashboardPanel.dataset.dashboardStatus = '0';
+      dashboardPanel.dataset.widgetDrawerStatus = '0';
+      document.body.appendChild(dashboardPanel);
 
-      var dbOverlay = $('<div>', {
-        id: "dbOverlay",
-        click: function () {
-          WebX.Dashboard.start();
-          return false;
-        }
-      }).appendTo('div#webxWrapper');
+      const dbOverlay = document.createElement('div');
+      dbOverlay.id = 'dbOverlay';
+      dbOverlay.addEventListener('click', function(e) {
+        e.preventDefault();
+        WebX.Dashboard.start();
+        return false;
+      });
+      document.getElementById('webxWrapper').appendChild(dbOverlay);
 
-      $('<div>', {
-        id: "dbDrawerButton",
-        click: function () {
-          WebX.Dashboard.drawer();
-          return false;
-        }
-      }).appendTo(dbOverlay);
-      $('<div>', {
-        id: "dbManageButton"
-      }).appendTo(dbOverlay);
+      const dbDrawerButton = document.createElement('div');
+      dbDrawerButton.id = 'dbDrawerButton';
+      dbDrawerButton.addEventListener('click', function(e) {
+        e.preventDefault();
+        WebX.Dashboard.drawer();
+        return false;
+      });
+      dbOverlay.appendChild(dbDrawerButton);
+
+      const dbManageButton = document.createElement('div');
+      dbManageButton.id = 'dbManageButton';
+      dbOverlay.appendChild(dbManageButton);
     },
     start: function () {
-      if ($('#dashboardPanel').data('dashboard_status') === 0) {
-        $("div#dbManageButton").hide();
-        $('div#dbOverlay').animate({
-          opacity: "toggle"
+      const dashboardPanel = document.getElementById('dashboardPanel');
+      const dbOverlay = document.getElementById('dbOverlay');
+      const dbManageButton = document.getElementById('dbManageButton');
+      const webxWrapper = document.getElementById('webxWrapper');
+      const dbDrawerButton = document.getElementById('dbDrawerButton');
+
+      if (dashboardPanel.dataset.dashboardStatus === '0') {
+        dbManageButton.style.display = 'none';
+        this.fadeToggle(dbOverlay, 420);
+        dashboardPanel.dataset.dashboardStatus = '1';
+      } else if (dashboardPanel.dataset.dashboardStatus === '1' && dashboardPanel.dataset.widgetDrawerStatus === '1') {
+        this.animate([webxWrapper, dbOverlay], {
+          marginTop: '0px'
         }, 420);
-        $('#dashboardPanel').data('dashboard_status', 1);
-      } else if ($('#dashboardPanel').data('dashboard_status') === 1 && $('#dashboardPanel').data('widget_drawer_status') === 1) {
-        $('div#webxWrapper, div#dbOverlay').animate({
-          marginTop: "0px"
-        }, {
-          queue: false,
-          duration: 420
-        });
-        $("div#dbDrawerButton").animate({
-          rotate: '+=135deg'
-        }, {
-          queue: false,
-          duration: 420
-        });
-        $("div#dbManageButton").animate({
-          opacity: 'toggle'
-        }, {
-          queue: false,
-          duration: 420
-        });
-        $("div#dbOverlay").fadeOut(420);
-        $('#dashboardPanel').data('widget_drawer_status', 0);
-        $('#dashboardPanel').data('dashboard_status', 0);
-      } else if ($('#dashboardPanel').data('dashboard_status') === 1) {
-        $("div#dbOverlay").fadeOut(420);
-        $('#dashboardPanel').data('dashboard_status', 0);
+        this.rotateElement(dbDrawerButton, 135, 420);
+        this.fadeToggle(dbManageButton, 420);
+        this.fadeOut(dbOverlay, 420);
+        dashboardPanel.dataset.widgetDrawerStatus = '0';
+        dashboardPanel.dataset.dashboardStatus = '0';
+      } else if (dashboardPanel.dataset.dashboardStatus === '1') {
+        this.fadeOut(dbOverlay, 420);
+        dashboardPanel.dataset.dashboardStatus = '0';
       }
     },
     drawer: function () {
-      if ($('#dashboardPanel').data('widget_drawer_status') === 0) {
-        $('div#webxWrapper, div#dbOverlay').animate({
-          marginTop: "-118px"
-        }, {
-          duration: 420
-        }, "linear");
-        $("div#dbDrawerButton").animate({
-          rotate: '-=135deg'
-        }, {
-          queue: false,
-          duration: 420
-        });
-        $("div#dbManageButton").animate({
-          opacity: 'toggle'
-        }, {
-          queue: false,
-          duration: 420
-        });
-        $('#dashboardPanel').data('widget_drawer_status', 1);
-      } else if ($('#dashboardPanel').data('widget_drawer_status') === 1) {
-        $('div#webxWrapper, div#dbOverlay').animate({
-          marginTop: "0px"
-        }, {
-          duration: 420
-        }, "linear");
-        $("div#dbDrawerButton").animate({
-          rotate: '+=135deg'
-        }, {
-          queue: false,
-          duration: 420
-        });
-        $("div#dbManageButton").animate({
-          opacity: 'toggle'
-        }, {
-          queue: false,
-          duration: 420
-        });
-        $('#dashboardPanel').data('widget_drawer_status', 0);
+      const dashboardPanel = document.getElementById('dashboardPanel');
+      const dbOverlay = document.getElementById('dbOverlay');
+      const dbManageButton = document.getElementById('dbManageButton');
+      const webxWrapper = document.getElementById('webxWrapper');
+      const dbDrawerButton = document.getElementById('dbDrawerButton');
+
+      if (dashboardPanel.dataset.widgetDrawerStatus === '0') {
+        this.animate([webxWrapper, dbOverlay], {
+          marginTop: '-118px'
+        }, 420);
+        this.rotateElement(dbDrawerButton, -135, 420);
+        this.fadeToggle(dbManageButton, 420);
+        dashboardPanel.dataset.widgetDrawerStatus = '1';
+      } else if (dashboardPanel.dataset.widgetDrawerStatus === '1') {
+        this.animate([webxWrapper, dbOverlay], {
+          marginTop: '0px'
+        }, 420);
+        this.rotateElement(dbDrawerButton, 135, 420);
+        this.fadeToggle(dbManageButton, 420);
+        dashboardPanel.dataset.widgetDrawerStatus = '0';
       }
+    },
+    // Animation helper methods
+    animate: function(elements, properties, duration) {
+      if (!Array.isArray(elements)) elements = [elements];
+      elements.forEach(element => {
+        element.style.transition = `all ${duration}ms`;
+        Object.keys(properties).forEach(prop => {
+          element.style[prop] = properties[prop];
+        });
+      });
+    },
+    fadeOut: function(element, duration) {
+      element.style.transition = `opacity ${duration}ms`;
+      element.style.opacity = '0';
+      setTimeout(() => {
+        element.style.display = 'none';
+      }, duration);
+    },
+    fadeToggle: function(element, duration) {
+      element.style.transition = `opacity ${duration}ms`;
+      if (element.style.display === 'none') {
+        element.style.display = '';
+        element.style.opacity = '1';
+      } else {
+        element.style.opacity = '0';
+        setTimeout(() => {
+          element.style.display = 'none';
+        }, duration);
+      }
+    },
+    rotateElement: function(element, degrees, duration) {
+      element.style.transition = `transform ${duration}ms`;
+      const currentRotation = element.style.transform ? 
+        parseInt(element.style.transform.match(/-?\d+/) || 0) : 0;
+      element.style.transform = `rotate(${currentRotation + degrees}deg)`;
     }
   },
   Data: {
