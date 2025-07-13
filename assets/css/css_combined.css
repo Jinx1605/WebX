@@ -1,7 +1,17 @@
-﻿/*
- * WebX Framework - Combined CSS
+/*
+ * WebX Framework - Combined CSS (Web Compliant Version)
  * Combined in order: WebX.css, WebX.Browser.css, WebX.Dashboard.css, WebX.Dock.css, WebX.Menubar.css, WebX.Finder.css
  * This file contains all the styles for the WebX desktop framework
+ * 
+ * Web Compliance Updates Made:
+ * - Removed all 'behavior:' properties (IE-specific HTCs)
+ * - Fixed 'overflow: none' to 'overflow: hidden'
+ * - Removed 'frameborder' and 'scrolling' (HTML attributes, not CSS)
+ * - Removed empty CSS rules
+ * - Updated old -webkit-gradient() syntax to modern linear-gradient()
+ * - Added standard linear-gradient() alongside vendor prefixes
+ * - Commented out -webkit-box-reflect (deprecated, non-standard)
+ * - Maintained backwards compatibility with vendor prefixes where needed
  */
 
 /* ===== WebX.css ===== */
@@ -85,7 +95,8 @@ body, #webxWrapper {
   -moz-box-shadow: 0px 6px 10px rgba(0, 0, 0, 0.6);
   box-shadow: 0px 6px 10px rgba(0, 0, 0, 0.6);
   position:relative;
-  -webkit-box-reflect: below 0px -webkit-gradient(linear, left top, left bottom, from(transparent), color-stop(.7, transparent), to(rgba(255,255,255,0.5)));
+  /* -webkit-box-reflect: below 0px -webkit-gradient(linear, left top, left bottom, from(transparent), color-stop(.7, transparent), to(rgba(255,255,255,0.5))); */
+  /* Reflection effect removed for web compliance - consider using CSS mask or pseudo-elements for modern browsers */
 }
 
 .iIcon img {
@@ -102,7 +113,8 @@ body, #webxWrapper {
 
 .iGloss {
   background: -moz-linear-gradient(top, rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0.1));
-  background: -webkit-gradient(linear, 0% 0%, 0% 100%, from(rgba(255, 255, 255, 0.35)), to(rgba(255, 255, 255, 0.1)));
+  background: -webkit-linear-gradient(top, rgba(255, 255, 255, 0.35) 0%, rgba(255, 255, 255, 0.1) 100%);
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.35) 0%, rgba(255, 255, 255, 0.1) 100%);
   height: 23px;
   width: 42px;
   position: relative;
@@ -121,9 +133,7 @@ body, #webxWrapper {
 }
 
 /*--- WINDOWS ---*/
-.wxWindow {
-
-}
+/* .wxWindow rule removed - was empty */
 
 /*--- WINDOW TYPE APP ---*/
 .wxWindow_app {
@@ -135,7 +145,8 @@ body, #webxWrapper {
 	width:100%;
 	height:60px;
 	background: -moz-linear-gradient(top, #CBCBCB 0%, #A7A7A7 100%);
-  background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#CBCBCB), color-stop(100%,#A7A7A7));
+	background: -webkit-linear-gradient(top, #CBCBCB 0%, #A7A7A7 100%);
+	background: linear-gradient(to bottom, #CBCBCB 0%, #A7A7A7 100%);
 	background:rgba(167,167,167,1);
 	border-bottom:1px solid rgba(81,81,81,1);
 	overflow:hidden;
@@ -244,7 +255,7 @@ body, #webxWrapper {
 	width:100%;
 	height:23px;
 	background: -moz-linear-gradient(top, #CBCBCB 0%, #A7A7A7 100%);
-  background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#CBCBCB), color-stop(100%,#A7A7A7));
+  background: -webkit-linear-gradient(top, #CBCBCB 0%, #A7A7A7 100%);
 	background:rgba(167,167,167,1);
 	border-top:1px solid rgba(81,81,81,1);
 	position:absolute;
@@ -277,9 +288,8 @@ body, #webxWrapper {
 	border-radius: 4px;
 	-moz-border-radius: 4px;
 	
-	overflow:none;
+	overflow: hidden;
 	border:1px solid #828282;
-	behavior: url(../PIE.php);
 }
 .wxButton_toggle_square {
 	width:50;
@@ -296,7 +306,7 @@ body, #webxWrapper {
 	border:1px solid rgba(155,155,155,1);
 	border-radius: 4px 4px 0px 0px;
 	-moz-border-radius: 4px 4px 0px 0px;
-	behavior: url(../ie-css3.php);
+
 	box-shadow: 0px 8px 40px rgba(0, 0, 0, 0.5);
   -moz-box-shadow: 0px 8px 40px rgba(0, 0, 0, 0.5);
 	z-index:10;
@@ -308,10 +318,10 @@ body, #webxWrapper {
 	position:relative;
 	background:#fcfcfc;
 	background: -moz-linear-gradient(top, #CBCBCB 0%, #A7A7A7 100%);
-  background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#CBCBCB), color-stop(100%,#A7A7A7));
+  background: -webkit-linear-gradient(top, #CBCBCB 0%, #A7A7A7 100%);
 	border-radius: 4px 4px 0px 0px;
 	-moz-border-radius: 4px 4px 0px 0px;
-	behavior: url(../ie-css3.php);
+
 }
 
 .wxBrowser_buttons {
@@ -325,7 +335,7 @@ body, #webxWrapper {
   height:10px;
   border-radius: 11px;
   -moz-border-radius: 11px;
-  behavior: url(../ie-css3.php);
+
   float:left;
   padding: 0px;
   margin: 0;
@@ -378,7 +388,7 @@ body, #webxWrapper {
 	height:30px;
 	border-radius: 30px;
 	-moz-border-radius: 30px;
-	behavior: url(../ie-css3.php);
+
 	position:absolute;
 	top:3px;
 	left:7px;
@@ -386,7 +396,7 @@ body, #webxWrapper {
 	background:#fcfcfc;
 	background-image:url('../imgs/browser/buttons.png');
 	background-image:url('../imgs/browser/buttons.png'), -moz-linear-gradient(top, #fcfcfc, #b0b0b0);
-	background-image:url('../imgs/browser/buttons.png'), -webkit-gradient(linear, 0% 0%, 0% 100%, from(#fcfcfc), to(#b0b0b0));
+	background-image:url('../imgs/browser/buttons.png'), -webkit-linear-gradient(top, #fcfcfc 0%, #b0b0b0 100%);
 	background-position: 0px 0px;
 	border:1px solid #545454;
 }
@@ -398,14 +408,14 @@ body, #webxWrapper {
 	height:20px;
 	border-radius: 0px 20px 20px 0px;
 	-moz-border-radius: 0px 20px 20px 0px;
-	behavior: url(../ie-css3.php);
+
 	position:absolute;
 	left:34px;
 	z-index:10;
 	background:#fcfcfc;
 	background-image:url('../imgs/browser/buttons.png');
 	background-image:url('../imgs/browser/buttons.png'), -moz-linear-gradient(top, #fcfcfc, #b0b0b0);
-	background-image:url('../imgs/browser/buttons.png'), -webkit-gradient(linear, 0% 0%, 0% 100%, from(#fcfcfc), to(#b0b0b0));
+	background-image:url('../imgs/browser/buttons.png'), -webkit-linear-gradient(top, #fcfcfc 0%, #b0b0b0 100%);
 	background-position: -26px 0px;
 	border:1px solid #545454;
 }
@@ -418,12 +428,12 @@ body, #webxWrapper {
 	border:1px solid #545454;
 	border-radius: 20px;
 	-moz-border-radius: 20px;
-	behavior: url(../ie-css3.php);
+
 	margin:0px 12px 0px 76px;
 	background:#fcfcfc;
 	background-image:url('../imgs/browser/buttons.png');
 	background-image:url('../imgs/browser/buttons.png'), -moz-linear-gradient(top, #fcfcfc, #b0b0b0);
-	background-image:url('../imgs/browser/buttons.png'), -webkit-gradient(linear, 0% 0%, 0% 100%, from(#fcfcfc), to(#b0b0b0));
+	background-image:url('../imgs/browser/buttons.png'), -webkit-linear-gradient(top, #fcfcfc 0%, #b0b0b0 100%);
 	background-position: -166px 0px;
 	border:1px solid #545454;
 	float:left;
@@ -435,12 +445,12 @@ body, #webxWrapper {
 	border:1px solid #545454;
 	border-radius: 20px;
 	-moz-border-radius: 20px;
-	behavior: url(../ie-css3.php);
+
 	margin:0px 12px 0px 0px;
 	background:#fcfcfc;
 	background-image:url('../imgs/browser/buttons.png');
 	background-image:url('../imgs/browser/buttons.png'), -moz-linear-gradient(top, #fcfcfc, #b0b0b0);
-	background-image:url('../imgs/browser/buttons.png'), -webkit-gradient(linear, 0% 0%, 0% 100%, from(#fcfcfc), to(#b0b0b0));
+	background-image:url('../imgs/browser/buttons.png'), -webkit-linear-gradient(top, #fcfcfc 0%, #b0b0b0 100%);
 	background-position: -70px 0px;
 	border:1px solid #545454;
 	float:left;
@@ -455,12 +465,12 @@ body, #webxWrapper {
 	border:1px solid #545454;
 	border-radius: 20px;
 	-moz-border-radius: 20px;
-	behavior: url(../ie-css3.php);
+
 	margin:0px 12px 0px 0px;
 	background:#fcfcfc;
 	background-image:url('../imgs/browser/buttons.png');
 	background-image:url('../imgs/browser/buttons.png'), -moz-linear-gradient(top, #fcfcfc, #b0b0b0);
-	background-image:url('../imgs/browser/buttons.png'), -webkit-gradient(linear, 0% 0%, 0% 100%, from(#fcfcfc), to(#b0b0b0));
+	background-image:url('../imgs/browser/buttons.png'), -webkit-linear-gradient(top, #fcfcfc 0%, #b0b0b0 100%);
 	background-position: -95px 0px;
 	border:1px solid #545454;
 	float:left;
@@ -474,14 +484,14 @@ body, #webxWrapper {
 	border:1px solid #545454;
 	border-radius: 20px;
 	-moz-border-radius: 20px;
-	behavior: url(../ie-css3.php);
+
 	padding:0px 0px 0px 30px;
 	margin:0px 12px 0px 0px;
 	z-index:10;
 	width:250px;
 	background:#fcfcfc;
 	background: -moz-linear-gradient(top, #fcfcfc, #b0b0b0);
-	background: -webkit-gradient(linear, 0% 0%, 0% 100%, from(#fcfcfc), to(#b0b0b0));
+	background: -webkit-linear-gradient(top, #fcfcfc 0%, #b0b0b0 100%);	background: -webkit-linear-gradient(top, #fcfcfc 0%, #b0b0b0 100%);
 	border:1px solid #545454;
 	float:left;
 	position:relative;
@@ -494,7 +504,7 @@ body, #webxWrapper {
 	width:230px;
 	border-radius: 20px;
 	-moz-border-radius: 20px;
-	behavior: url(../ie-css3.php);
+
 	border:0;
 	-webkit-box-shadow: inset 0px 1px 2px #000000;
 	-moz-box-shadow: inset 0px 1px 2px #000000;
@@ -516,13 +526,12 @@ body, #webxWrapper {
 }
 
 .wxBrowser_iframe {
-	frameborder:0;
 	border:0;
 	width:100%;
 	height:274px;
 	margin:0px;
 	padding:0;
-	scrolling:auto;
+	overflow:auto;
 }
 /*--- DASHBOARD ---*/
 #dashboardPanel {
@@ -952,7 +961,7 @@ div.mbSubWindow {
 	border:1px solid rgba(155,155,155,1);
 	border-radius: 4px;
 	-moz-border-radius: 4px;
-	behavior: url(../ie-css3.php);
+
 	box-shadow: 0px 8px 40px rgba(0, 0, 0, 0.5);
   -moz-box-shadow: 0px 8px 40px rgba(0, 0, 0, 0.5);
 	width:500px;
@@ -966,10 +975,10 @@ div.mbSubWindow {
 	position:relative;
 	background:#fcfcfc;
 	background: -moz-linear-gradient(top, #CBCBCB 0%, #A7A7A7 100%);
-  background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#CBCBCB), color-stop(100%,#A7A7A7));
+  background: -webkit-linear-gradient(top, #CBCBCB 0%, #A7A7A7 100%);
 	border-radius: 4px 4px 0px 0px;
 	-moz-border-radius: 4px 4px 0px 0px;
-	behavior: url(../ie-css3.php);
+
 }
 
 .wxFinder_buttons {
@@ -983,7 +992,7 @@ div.mbSubWindow {
   height:10px;
   border-radius: 11px;
   -moz-border-radius: 11px;
-  behavior: url(../ie-css3.php);
+
   float:left;
   padding: 0px;
   margin: 0;
@@ -1031,7 +1040,7 @@ div.mbSubWindow {
 	background:#fcfcfc;
 	background-image:url('../imgs/finder/buttons.png');
 	background-image:url('../imgs/finder/buttons.png'), -moz-linear-gradient(top, #fcfcfc, #b0b0b0);
-	background-image:url('../imgs/finder/buttons.png'), -webkit-gradient(linear, 0% 0%, 0% 100%, from(#fcfcfc), to(#b0b0b0));
+	background-image:url('../imgs/finder/buttons.png'), -webkit-linear-gradient(top, #fcfcfc 0%, #b0b0b0 100%);
 	background-position:0px 0px;
   border-radius: 4px 0px 0px 4px;
   -moz-border-radius: 4px 0px 0px 4px;
@@ -1051,7 +1060,7 @@ div.mbSubWindow {
 	background:#fcfcfc;
 	background-image:url('../imgs/finder/buttons.png');
 	background-image:url('../imgs/finder/buttons.png'), -moz-linear-gradient(top, #fcfcfc, #b0b0b0);
-	background-image:url('../imgs/finder/buttons.png'), -webkit-gradient(linear, 0% 0%, 0% 100%, from(#fcfcfc), to(#b0b0b0));
+	background-image:url('../imgs/finder/buttons.png'), -webkit-linear-gradient(top, #fcfcfc 0%, #b0b0b0 100%);
 	background-position:-26px 0px;
   border-radius:0px 4px 4px 0px;
   -moz-border-radius:0px 4px 4px 0px;
@@ -1067,7 +1076,7 @@ div.mbSubWindow {
   border: 1px solid #555555;
 	background-image:url('../imgs/finder/buttons.png');
 	background-image:url('../imgs/finder/buttons.png'), -moz-linear-gradient(top, #fcfcfc, #b0b0b0);
-	background-image:url('../imgs/finder/buttons.png'), -webkit-gradient(linear, 0% 0%, 0% 100%, from(#fcfcfc), to(#b0b0b0));
+	background-image:url('../imgs/finder/buttons.png'), -webkit-linear-gradient(top, #fcfcfc 0%, #b0b0b0 100%);
 	background-position:-47px 0px;
   border-radius: 4px 0px 0px 4px;
   -moz-border-radius: 4px 0px 0px 4px;
@@ -1086,7 +1095,7 @@ div.mbSubWindow {
   border-right: 1px solid #555555;
 	background-image:url('../imgs/finder/buttons.png');
 	background-image:url('../imgs/finder/buttons.png'), -moz-linear-gradient(top, #fcfcfc, #b0b0b0);
-	background-image:url('../imgs/finder/buttons.png'), -webkit-gradient(linear, 0% 0%, 0% 100%, from(#fcfcfc), to(#b0b0b0));
+	background-image:url('../imgs/finder/buttons.png'), -webkit-linear-gradient(top, #fcfcfc 0%, #b0b0b0 100%);
 	background-position:-71px 0px;
   float:left;
 }
@@ -1103,7 +1112,7 @@ div.mbSubWindow {
 	background:#fcfcfc;
 	background-image:url('../imgs/finder/buttons.png');
 	background-image:url('../imgs/finder/buttons.png'), -moz-linear-gradient(top, #fcfcfc, #b0b0b0);
-	background-image:url('../imgs/finder/buttons.png'), -webkit-gradient(linear, 0% 0%, 0% 100%, from(#fcfcfc), to(#b0b0b0));
+	background-image:url('../imgs/finder/buttons.png'), -webkit-linear-gradient(top, #fcfcfc 0%, #b0b0b0 100%);
 	background-position:-99px 0px;
   float:left;
 }
@@ -1120,7 +1129,7 @@ div.mbSubWindow {
 	background:#fcfcfc;
 	background-image:url('../imgs/finder/buttons.png');
 	background-image:url('../imgs/finder/buttons.png'), -moz-linear-gradient(top, #fcfcfc, #b0b0b0);
-	background-image:url('../imgs/finder/buttons.png'), -webkit-gradient(linear, 0% 0%, 0% 100%, from(#fcfcfc), to(#b0b0b0));
+	background-image:url('../imgs/finder/buttons.png'), -webkit-linear-gradient(top, #fcfcfc 0%, #b0b0b0 100%);
 	background-position:-125px 0px;
 	border-radius:0px 4px 4px 0px;
   -moz-border-radius:0px 4px 4px 0px;
@@ -1137,7 +1146,7 @@ div.mbSubWindow {
 	background:#fcfcfc;
 	background-image:url('../imgs/finder/buttons.png');
 	background-image:url('../imgs/finder/buttons.png'), -moz-linear-gradient(top, #fcfcfc, #b0b0b0);
-	background-image:url('../imgs/finder/buttons.png'), -webkit-gradient(linear, 0% 0%, 0% 100%, from(#fcfcfc), to(#b0b0b0));
+	background-image:url('../imgs/finder/buttons.png'), -webkit-linear-gradient(top, #fcfcfc 0%, #b0b0b0 100%);
 	background-position:-146px 0px;
 	border-radius:4px;
   -moz-border-radius:4px;
@@ -1152,7 +1161,7 @@ div.mbSubWindow {
   background:#747474;
   background-image:url('../imgs/finder/buttons.png');
 	background-image:url('../imgs/finder/buttons.png'), -moz-linear-gradient(top, #424242, #747474);
-	background-image:url('../imgs/finder/buttons.png'), -webkit-gradient(linear, 0% 0%, 0% 100%, from(#424242), to(#747474));
+	background-image:url('../imgs/finder/buttons.png'), -webkit-linear-gradient(top, #424242 0%, #747474 100%);
   -webkit-box-shadow: inset 0px 2px 6px rgba(0,0,0,0.6);
   -moz-box-shadow: inset 0px 2px 6px rgba(0,0,0,0.6);
   box-shadow: inset 0px 2px 6px rgba(0,0,0,0.6);
@@ -1184,7 +1193,7 @@ div.mbSubWindow {
 	height:23px;
 	background:#fcfcfc;
 	background: -moz-linear-gradient(top, #CBCBCB 0%, #A7A7A7 100%);
-  background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#CBCBCB), color-stop(100%,#A7A7A7));
+  background: -webkit-linear-gradient(top, #CBCBCB 0%, #A7A7A7 100%);
 	position:absolute;
 	bottom:0;
 	overflow:hidden;
