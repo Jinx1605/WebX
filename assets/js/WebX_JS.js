@@ -170,7 +170,7 @@ window.WebX = {
   },
   Dashboard: {
     init() {
-      console.log('Dashboard init called');
+      // console.log('Dashboard init called');
       const dashboardPanel = createEl('div', { id: 'dashboardPanel' });
       document.body.appendChild(dashboardPanel);
       
@@ -194,7 +194,7 @@ window.WebX = {
           button.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
-            console.log(`${id} clicked!`);
+            // console.log(`${id} clicked!`);
             handler();
             return false;
           });
@@ -205,17 +205,17 @@ window.WebX = {
       // Overlay click handler
       dbOverlay.addEventListener('click', (e) => {
         e.preventDefault();
-        console.log('Overlay clicked');
+        // console.log('Overlay clicked');
         this.start();
         return false;
       });
       
-      console.log('Dashboard elements created');
+      // console.log('Dashboard elements created');
     },
 
     start() {
       const elements = this.getElements();
-      console.log('Dashboard start called. Elements found:', elements);
+      // console.log('Dashboard start called. Elements found:', elements);
       
       if (!elements.dashboardPanel) {
         console.error('Dashboard panel not found');
@@ -226,15 +226,15 @@ window.WebX = {
       const status = dashboardPanel.dataset.dashboardStatus;
       const drawerStatus = dashboardPanel.dataset.widgetDrawerStatus;
       
-      console.log('Current dashboard status:', status);
+      // console.log('Current dashboard status:', status);
 
       if (status === '0') {
-        console.log('Activating dashboard...');
+        // console.log('Activating dashboard...');
         dbManageButton.style.display = 'none';
         this.fadeToggle(dbOverlay, 420);
         dashboardPanel.dataset.dashboardStatus = '1';
       } else if (status === '1' && drawerStatus === '1') {
-        console.log('Closing dashboard with drawer open...');
+        // console.log('Closing dashboard with drawer open...');
         this.animate([webxWrapper, dbOverlay], { marginTop: '0px' }, 420);
         this.rotateElement(dbDrawerButton, 135, 420);
         this.fadeToggle(dbManageButton, 420);
@@ -244,7 +244,7 @@ window.WebX = {
           dashboardStatus: '0'
         });
       } else if (status === '1') {
-        console.log('Closing dashboard...');
+        // console.log('Closing dashboard...');
         this.fadeOut(dbOverlay, 420);
         dashboardPanel.dataset.dashboardStatus = '0';
       }
@@ -252,7 +252,7 @@ window.WebX = {
 
     drawer() {
       const elements = this.getElements();
-      console.log('Dashboard drawer called. Elements found:', elements);
+      // console.log('Dashboard drawer called. Elements found:', elements);
       
       if (!elements.dashboardPanel) {
         console.error('Dashboard panel not found');
@@ -262,18 +262,18 @@ window.WebX = {
       const { dashboardPanel, dbOverlay, dbManageButton, webxWrapper, dbDrawerButton } = elements;
       const status = dashboardPanel.dataset.widgetDrawerStatus;
       
-      console.log('Widget drawer status:', status);
+      // console.log('Widget drawer status:', status);
 
       const actions = {
         '0': () => {
-          console.log('Opening drawer...');
+          // console.log('Opening drawer...');
           this.animate([webxWrapper, dbOverlay], { marginTop: '-118px' }, 420);
           this.rotateElement(dbDrawerButton, -135, 420);
           this.fadeToggle(dbManageButton, 420);
           dashboardPanel.dataset.widgetDrawerStatus = '1';
         },
         '1': () => {
-          console.log('Closing drawer...');
+          // console.log('Closing drawer...');
           this.animate([webxWrapper, dbOverlay], { marginTop: '0px' }, 420);
           this.rotateElement(dbDrawerButton, 135, 420);
           this.fadeToggle(dbManageButton, 420);
@@ -632,7 +632,7 @@ WebX.Browser.prototype = {
     navButtons.forEach(type => {
       const button = createEl('div', { className: `wxBrowser_button_${type}` });
       button.addEventListener('click', () => {
-        console.log(`${type} button clicked`);
+        // console.log(`${type} button clicked`);
         return false;
       });
       browser_nav.appendChild(button);
@@ -741,7 +741,7 @@ WebX.Browser.prototype = {
         .then(response => response.text())
         .then(data => title.innerHTML = data)
         .catch(error => {
-          console.log('Could not fetch page title:', error);
+          // console.log('Could not fetch page title:', error);
           title.innerHTML = 'Browse';
         });
       }
@@ -992,7 +992,7 @@ WebX.Finder.prototype = {
     const nav = finder.querySelector('.wxFinder_nav');
     ['back','forward','icon_view','list_view','column_view','coverflow_view','quicklook'].forEach(type => {
       const btn = createEl('div', { className: `wxFinder_button_${type}` });
-      btn.addEventListener('click', () => { console.log(`${type} button clicked`); return false; });
+      btn.addEventListener('click', () => { /* console.log(`${type} button clicked`); */ return false; });
       ['mousedown','mouseup'].forEach(event => btn.addEventListener(event, function() { this.classList.toggle('finder_pressed', event === 'mousedown'); }));
       nav.appendChild(btn);
     });
