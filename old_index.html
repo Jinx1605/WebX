@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WebX -  now all Vanilla JS!</title>
+  <title>WebX</title>
 
   <link rel="stylesheet" href="assets/css/WebX.css">
   <link rel="stylesheet" href="assets/css/WebX.Browser.css">
@@ -13,20 +13,23 @@
   <link rel="stylesheet" href="assets/css/WebX.Menubar.css">
   <link rel="stylesheet" href="assets/css/WebX.Finder.css">
 
-  <!-- Only needed for progressbar UI during loading -->
-  <script src="assets/js/jquery-1.4.4.min.js"></script>
-  <script src="assets/js/jquery-ui-1.8.7.custom.min.js"></script>
-  
-  <!-- Debug tools -->
   <script src="assets/js/ba-debug.min.js"></script>
-  
-  <!-- Core utilities -->
+  <script src="assets/js/jquery-1.4.4.min.js"></script>
+  <script src="assets/js/jquery.transform-0.8.0.min.js"></script>
+  <script src="assets/js/jquery.rightClick.js"></script>
+  <script src="assets/js/json2.js"></script>
+  <script src="assets/js/jquery-ui-1.8.7.custom.min.js"></script>
+  <script src="assets/js/utils.js"></script>
   <script src="assets/js/WebXUtils.js"></script>
   <script src="assets/js/vanilla_pl.js"></script>
-  <script src="assets/js/Animation.js"></script>
-  
-  <!-- Main WebX implementation -->
   <script src="assets/js/WebX_JS.js"></script>
+  <!-- All components now condensed into WebX_JS.js -->
+  <!-- <script src="assets/js/WebX.Dock.js"></script> -->
+  <!-- <script src="assets/js/WebX.Clock.js"></script> -->
+  <!-- <script src="assets/js/WebX.Window.js"></script> -->
+  <!-- <script src="assets/js/WebX.Browser.js"></script> -->
+  <!-- <script src="assets/js/WebX.Finder.js"></script> -->
+  <!-- <script src="assets/js/webx_init.js"></script> -->
 </head>
 <body>
   <div id="starter">
@@ -83,27 +86,16 @@
               }
               //var starterP = document.querySelector('#starter p');
               //if (starterP) starterP.innerHTML = "Click to Start";
-              
-              // Initialize WebX after everything is loaded
-              if (typeof WebX !== 'undefined' && WebX.init) {
-                WebX.init();
-              } else {
-                console.error('WebX is not defined. Check script loading order.');
-              }
-            })
-            .catch(function(error) {
-              console.error('Error loading settings:', error);
+              WebX.init();
             });
         }
       });
 
-      // Better console override for debugging
-      if (typeof window.console === 'undefined') {
-        window.console = {
-          log: function(msg) {},
-          warn: function(msg) {},
-          error: function(msg) {}
-        };
+      // Dummy console override if needed
+      if(typeof(console) !== 'undefined' && console != null) {
+        var console = {
+          log: function (args) {}
+        }
       }
     });
   </script>
