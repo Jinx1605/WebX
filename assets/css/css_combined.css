@@ -1200,3 +1200,94 @@ div.mbSubWindow {
 	text-align:center;
 	color:#000000;
 }
+
+/* ============================================
+   PROGRESSBAR STYLES
+   ============================================ */
+
+.webx-progressbar {
+    width: 100%;
+    height: 20px;
+    background: linear-gradient(45deg, rgba(255,255,255,0.1) 25%, transparent 25%, transparent 50%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.1) 75%, transparent 75%, transparent);
+    background-size: 40px 40px;
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 10px;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+    overflow: hidden;
+    position: relative;
+}
+
+.webx-progressbar-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(to bottom, #4CAF50, #45a049);
+    border-radius: 9px;
+    transition: width 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.webx-progressbar-fill::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+    animation: shimmer 1.5s infinite;
+}
+
+.webx-progressbar-pulse .webx-progressbar-fill {
+    animation: pulse 1s infinite;
+}
+
+.webx-progressbar-bounce .webx-progressbar-fill {
+    animation: bounce 0.6s infinite alternate;
+}
+
+.webx-progressbar-complete .webx-progressbar-fill {
+    background: linear-gradient(to bottom, #4CAF50, #45a049);
+    animation: complete-glow 0.8s ease-out;
+}
+
+@keyframes shimmer {
+    0% { left: -100%; }
+    100% { left: 100%; }
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+@keyframes bounce {
+    0% { transform: scaleY(1); }
+    100% { transform: scaleY(1.2); }
+}
+
+@keyframes complete-glow {
+    0% { box-shadow: 0 0 5px rgba(76, 175, 80, 0.5); }
+    50% { box-shadow: 0 0 20px rgba(76, 175, 80, 0.8), 0 0 30px rgba(76, 175, 80, 0.6); }
+    100% { box-shadow: 0 0 5px rgba(76, 175, 80, 0.5); }
+}
+
+.webx-progressbar-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+    z-index: 10;
+}
+
+/* Loading states */
+.webx-loading-text {
+    text-align: center;
+    margin: 10px 0;
+    color: #333;
+    font-family: Arial, sans-serif;
+}

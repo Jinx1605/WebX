@@ -4,16 +4,12 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WebX -  now all Vanilla JS!</title>
+  <title>WebX - Pure Vanilla JavaScript Desktop!</title>
 
   <link rel="stylesheet" href="assets/css/css_combined.css">
 
-  <!-- Only needed for progressbar UI during loading -->
-  <script src="assets/js/jquery-1.4.4.min.js"></script>
-  <script src="assets/js/jquery-ui-1.8.7.custom.min.js"></script>
-  
   <!-- Debug tools -->
-  <script src="assets/js/ba-debug.min.js"></script>
+  <!-- <script src="assets/js/ba-debug.min.js"></script> -->
   
   <!-- Core utilities -->
   <script src="assets/js/WebXUtils.js"></script>
@@ -26,7 +22,10 @@
 <body>
   <div id="starter">
     <p style="margin-top:35px;cursor:default;">Loading...</p>
-    <div id="start_progress"></div>
+    <div id="start_progress" class="webx-progressbar">
+      <div class="webx-progressbar-fill"></div>
+      <div class="webx-progressbar-text">0%</div>
+    </div>
   </div>
   <script>
     document.addEventListener('DOMContentLoaded', function () {
@@ -44,22 +43,30 @@
         'assets/imgs/wallpaper/The_Great_Wave.jpg'
       ], {
         init: function (loaded, total) {
-          var progress = document.getElementById('start_progress');
-          if (progress && typeof $(progress).progressbar === 'function') {
-            $(progress).progressbar({ value: ((loaded/total) * 100) });
-          } else if (progress) {
-            progress.style.width = ((loaded/total) * 100) + '%';
+          var progressElement = document.getElementById('start_progress');
+          var percentage = Math.round((loaded/total) * 100);
+          
+          if (progressElement && window.Animation && Animation.progressbar) {
+            Animation.progressbar.update(progressElement, percentage, {
+              showText: true,
+              animate: true
+            });
           }
+          
           var starterP = document.querySelector('#starter p');
           if (starterP) starterP.innerHTML = "Loading...";
         },
         loaded: function (img, loaded, total) {
-          var progress = document.getElementById('start_progress');
-          if (progress && typeof $(progress).progressbar === 'function') {
-            $(progress).progressbar({ value: ((loaded/total) * 100) });
-          } else if (progress) {
-            progress.style.width = ((loaded/total) * 100) + '%';
+          var progressElement = document.getElementById('start_progress');
+          var percentage = Math.round((loaded/total) * 100);
+          
+          if (progressElement && window.Animation && Animation.progressbar) {
+            Animation.progressbar.update(progressElement, percentage, {
+              showText: true,
+              animate: true
+            });
           }
+          
           var starterP = document.querySelector('#starter p');
           if (starterP) starterP.innerHTML = "Loading...";
         },
@@ -68,23 +75,31 @@
             .then(function(response) { return response.json(); })
             .then(function(data) {
               window.webx_data = data;
-              var progress = document.getElementById('start_progress');
-              if (progress && typeof $(progress).progressbar === 'function') {
-                $(progress).progressbar({ value: ((loaded/total) * 100) }).fadeOut(210);
-              } else if (progress) {
-                progress.style.width = ((loaded/total) * 100) + '%';
-                progress.style.transition = 'opacity 0.21s';
-                progress.style.opacity = 0;
+              var progressElement = document.getElementById('start_progress');
+              
+              if (progressElement && window.Animation && Animation.progressbar) {
+                // Complete the progressbar with animation
+                Animation.progressbar.complete(progressElement, {
+                  onComplete: function() {
+                    // Fade out the entire starter div
+                    Animation.fadeOut(document.getElementById('starter'), {
+                      duration: 500,
+                      onComplete: function() {
+                        document.getElementById('starter').style.display = 'none';
+                      }
+                    });
+                  }
+                });
               }
-              //var starterP = document.querySelector('#starter p');
-              //if (starterP) starterP.innerHTML = "Click to Start";
               
               // Initialize WebX after everything is loaded
-              if (typeof WebX !== 'undefined' && WebX.init) {
-                WebX.init();
-              } else {
-                console.error('WebX is not defined. Check script loading order.');
-              }
+              setTimeout(function() {
+                if (typeof WebX !== 'undefined' && WebX.init) {
+                  WebX.init();
+                } else {
+                  console.error('WebX is not defined. Check script loading order.');
+                }
+              }, 600);
             })
             .catch(function(error) {
               console.error('Error loading settings:', error);

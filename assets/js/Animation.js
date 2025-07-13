@@ -178,6 +178,212 @@ const Animation = {
         };
 
         element.addEventListener('transitionend', handleTransitionEnd);
+    },
+
+    // Progressbar animations
+    progressbar: {
+        /**
+         * Creates a smooth progress bar animation
+         * @param {HTMLElement} element - The progress bar element
+         * @param {number} value - Progress value (0-100)
+         * @param {Object} options - Animation options
+         */
+        update(element, value, options = {}) {
+            const defaults = {
+                duration: 400,
+                easing: 'easeOutExpo',
+                onComplete: null
+            };
+
+            const settings = { ...defaults, ...options };
+            
+            // Ensure value is within bounds
+            value = Math.max(0, Math.min(100, value));
+            
+            // Get or create progress bar
+            let progressBar = element.querySelector('.progress-bar');
+            if (!progressBar) {
+                progressBar = document.createElement('div');
+                progressBar.className = 'progress-bar';
+                progressBar.style.cssText = `
+                    width: 0%;
+                    height: 100%;
+                    background: linear-gradient(90deg, #4CAF50 0%, #45a049 100%);
+                    border-radius: inherit;
+                    transition: width ${settings.duration}ms ${Animation.easings[settings.easing]};
+                    position: relative;
+                    overflow: hidden;
+                `;
+                element.appendChild(progressBar);
+            }
+
+            // Create shimmer effect
+            let shimmer = progressBar.querySelector('.progress-shimmer');
+            if (!shimmer && value > 0) {
+                shimmer = document.createElement('div');
+                shimmer.className = 'progress-shimmer';
+                shimmer.style.cssText = `
+                    position: absolute;
+                    top: 0;
+                    left: -100%;
+                    width: 100%;
+                    height: 100%;
+                    background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.6) 50%, transparent 100%);
+                    animation: shimmer 2s infinite;
+                `;
+                progressBar.appendChild(shimmer);
+            }
+
+            // Animate progress
+            progressBar.style.width = value + '%';
+
+            // Handle completion
+            if (settings.onComplete) {
+                setTimeout(settings.onComplete, settings.duration);
+            }
+
+            return progressBar;
+        },
+
+        /**
+         * Pulses the progress bar for attention
+         * @param {HTMLElement} element - The progress bar element
+         * @param {Object} options - Animation options
+         */
+        pulse(element, options = {}) {
+            const defaults = {
+                duration: 600,
+                scale: 1.05,
+                repeat: 1
+            };
+
+            const settings = { ...defaults, ...options };
+            
+            return new Promise(resolve => {
+                let count = 0;
+                const doPulse = () => {
+                    Animation.scale(element, settings.scale, settings.duration / 2, 'easeOutExpo')
+                        .then(() => Animation.scale(element, 1, settings.duration / 2, 'easeOutExpo'))
+                        .then(() => {
+                            count++;
+                            if (count < settings.repeat) {
+                                doPulse();
+                            } else {
+                                resolve();
+                            }
+                        });
+                };
+                doPulse();
+            });
+        },
+
+        /**
+         * Bounces the progress bar
+         * @param {HTMLElement} element - The progress bar element
+         * @param {Object} options - Animation options
+         */
+        bounce(element, options = {}) {
+            const defaults = {
+                duration: 500,
+                height: 1.2
+            };
+
+            const settings = { ...defaults, ...options };
+            
+            return Animation.transitions.transform(element, 
+                { transform: `scaleY(${settings.height})` }, 
+                settings.duration / 2, 'easeOutBack')
+                .then(() => Animation.transitions.transform(element, 
+                    { transform: 'scaleY(1)' }, 
+                    settings.duration / 2, 'easeOutBack'));
+        },
+
+        /**
+         * Creates a completion celebration effect
+         * @param {HTMLElement} element - The progress bar element
+         * @param {Object} options - Animation options
+         */
+        complete(element, options = {}) {
+            const defaults = {
+                duration: 800,
+                onComplete: null
+            };
+
+            const settings = { ...defaults, ...options };
+            
+            // First pulse
+            return Animation.progressbar.pulse(element, { repeat: 2, duration: 300 })
+                .then(() => {
+                    // Then fade out
+                    return Animation.fadeOut(element, settings.duration, 'easeOutExpo');
+                })
+                .then(() => {
+                    if (settings.onComplete) {
+                        settings.onComplete();
+                    }
+                });
+        }
+    },
+
+    // Loading text animations
+    loadingText: {
+        /**
+         * Creates a typing effect for loading text
+         * @param {HTMLElement} element - The text element
+         * @param {string} text - The text to type
+         * @param {Object} options - Animation options
+         */
+        typewriter(element, text, options = {}) {
+            const defaults = {
+                speed: 100,
+                onComplete: null
+            };
+
+            const settings = { ...defaults, ...options };
+            
+            return new Promise(resolve => {
+                let i = 0;
+                element.textContent = '';
+                
+                const typeChar = () => {
+                    if (i < text.length) {
+                        element.textContent += text.charAt(i);
+                        i++;
+                        setTimeout(typeChar, settings.speed);
+                    } else {
+                        if (settings.onComplete) settings.onComplete();
+                        resolve();
+                    }
+                };
+                
+                typeChar();
+            });
+        },
+
+        /**
+         * Creates animated dots for loading
+         * @param {HTMLElement} element - The text element
+         * @param {Object} options - Animation options
+         */
+        dots(element, options = {}) {
+            const defaults = {
+                baseText: 'Loading',
+                maxDots: 3,
+                speed: 500
+            };
+
+            const settings = { ...defaults, ...options };
+            
+            let dotCount = 0;
+            const interval = setInterval(() => {
+                dotCount = (dotCount + 1) % (settings.maxDots + 1);
+                element.textContent = settings.baseText + '.'.repeat(dotCount);
+            }, settings.speed);
+
+            return {
+                stop: () => clearInterval(interval)
+            };
+        }
     }
 };
 
